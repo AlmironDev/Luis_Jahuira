@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+    <style>
+        .role-badge {
+            font-size: 0.75rem;
+        }
+        .user-card {
+            transition: all 0.3s ease;
+        }
+        .user-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-people-fill"></i> Gestión de Usuarios
+            </h1>
+            <div>
+                <a href="{{ url_for('usuarios_add') }}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Nuevo Usuario
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Inicio
+                </a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for usuario in usuarios %}
+            <div class="col">
+                <div class="card user-card h-100 shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">{{ usuario['nombre'] }}</h5>
+                        <span class="badge rounded-pill bg-{{ 'success' if usuario['activo'] else 'secondary' }}">
+                            {{ 'Activo' if usuario['activo'] else 'Inactivo' }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h6 class="text-muted small mb-1">Usuario:</h6>
+                            <p>{{ usuario['username'] }}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 class="text-muted small mb-1">DNI:</h6>
+                            <p>{{ usuario['dni'] }}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 class="text-muted small mb-1">Rol:</h6>
+                            <span class="badge role-badge bg-{{ 'primary' if usuario['role'] == 2 else 'info' }}">
+                                {{ 'Administrador' if usuario['role'] == 2 else 'Usuario' }}
+                            </span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <h6 class="text-muted small mb-1">Registrado:</h6>
+                            <p>{{ usuario['fecha_registro'] }}</p>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('usuarios_edit', id=usuario['id']) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i> Editar
+                            </a>
+                            <div class="btn-group">
+                                <a href="{{ url_for('usuarios_toggle', id=usuario['id']) }}" 
+                                   class="btn btn-sm btn-{{ 'warning' if usuario['activo'] else 'success' }}">
+                                    <i class="bi bi-{{ 'x-circle' if usuario['activo'] else 'check-circle' }}"></i>
+                                    {{ 'Desactivar' if usuario['activo'] else 'Activar' }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-12">
+                <div class="text-center py-5 bg-white rounded shadow-sm">
+                    <i class="bi bi-people" style="font-size: 3rem; color: #6c757d;"></i>
+                    <h4 class="mt-3">No hay usuarios registrados</h4>
+                    <p class="text-muted">Comienza agregando un nuevo usuario</p>
+                    <a href="{{ url_for('usuarios_add') }}" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Agregar Usuario
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

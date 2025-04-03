@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio - Sistema de Monitoreo de Postura{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h4>Monitor en vivo</h4>
+            </div>
+            <div class="card-body">
+                {% if active_video %}
+                    <div class="ratio ratio-16x9">
+                        <img src="{{ url_for('main.video_feed') }}" class="img-fluid" alt="Video en vivo">
+                    </div>
+                    <div class="alert alert-info mt-3" id="alertBox" style="display: none;">
+                        <strong id="alertMessage"></strong>
+                    </div>
+                {% else %}
+                    <div class="alert alert-warning">
+                        No hay ningún video activo. Por favor, <a href="{{ url_for('main.video_list') }}">selecciona uno</a>.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h4>Información</h4>
+            </div>
+            <div class="card-body">
+                {% if active_video %}
+                    <h5>{{ active_video.name }}</h5>
+                    <p class="text-muted">{{ active_video.video_url }}</p>
+                    <a href="{{ url_for('main.video_list') }}" class="btn btn-primary">
+                        Cambiar video
+                    </a>
+                {% else %}
+                    <p>No hay video activo actualmente.</p>
+                    <a href="{{ url_for('main.add_video') }}" class="btn btn-success">
+                        Agregar nuevo video
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Actualizar la imagen del video cada 100ms
+    setInterval(function() {
+        const videoFeed = document.querySelector('img[alt="Video en vivo"]');
+        if (videoFeed) {
+            videoFeed.src = "{{ url_for('main.video_feed') }}?t=" + new Date().getTime();
+        }
+    }, 100);
+
+    // Verificar alertas (simulado - en producción usaría WebSockets)
+    setInterval(function() {
+        fetch("{{ url_for('main.video_feed') }}")
+            .then(response => {
+                // En una implementación real, aquí se recibirían las alertas del servidor
+                // Esto es solo para demostración
+                if (Math.random() > 0.9) {
+                    const alertBox = document.getElementById('alertBox');
+                    const alertMessage = document.getElementById('alertMessage');
+                    if (alertBox && alertMessage) {
+                        alertMessage.textContent = "Mala postura detectada! Por favor, ajusta tu posición.";
+                        alertBox.style.display = 'block';
+                        setTimeout(() => {
+                            alertBox.style.display = 'none';
+                        }, 5000);
+                    }
+                }
+            });
+    }, 3000);
+</script>
+{% endblock %}
