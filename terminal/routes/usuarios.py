@@ -7,13 +7,15 @@ def configure_usuarios_routes(app):
     def usuarios_index():
         """Lista todos los usuarios registrados"""
         conn = get_db_connection()
+        print("conect",conn)
         usuarios = conn.execute('''
-            SELECT id, nombre, username, role, dni, 
-                   strftime('%d/%m/%Y %H:%M', fecha_registro) as fecha_registro,
-                   activo
+            SELECT *
             FROM usuarios
             ORDER BY nombre ASC
         ''').fetchall()
+
+        print("Usuarios:", usuarios)  
+
         conn.close()
         return render_template('usuarios/index.html', usuarios=usuarios)
 
