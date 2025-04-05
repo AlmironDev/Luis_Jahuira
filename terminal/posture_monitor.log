@@ -1,0 +1,104 @@
+2025-04-05 18:04:43,446 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+2025-04-05 18:04:43,446 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2025-04-05 18:04:43,454 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:04:47,197 - werkzeug - WARNING -  * Debugger is active!
+2025-04-05 18:04:47,201 - werkzeug - INFO -  * Debugger PIN: 538-203-687
+2025-04-05 18:04:47,224 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:47,225 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:47] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:47,234 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:47] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:50,698 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:50,699 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:50] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:50,704 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:50] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:51,439 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:51,439 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:51] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:51,444 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:51] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:51,962 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:51,963 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:51] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:51,967 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:51] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:52,161 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:52,161 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:52,167 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:52,336 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:52,337 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:52,340 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:52,533 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:52,534 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:52,537 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:52,702 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:52,703 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:52,707 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:52,873 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:52,874 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:52,878 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:52] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:53,039 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:53,039 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:53] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:53,043 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:53] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:04:53,208 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:04:53,209 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:53] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:04:53,217 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:04:53] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:05:40,660 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\routes\\videos.py', reloading
+2025-04-05 18:05:40,660 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\routes\\videos.py', reloading
+2025-04-05 18:05:40,661 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\routes\\videos.py', reloading
+2025-04-05 18:05:41,395 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:05:45,290 - werkzeug - WARNING -  * Debugger is active!
+2025-04-05 18:05:45,295 - werkzeug - INFO -  * Debugger PIN: 538-203-687
+2025-04-05 18:05:45,319 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:05:45,320 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:05:45] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:05:45,325 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:05:45] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:05:45,328 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:05:45] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:06:03,059 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\routes\\videos.py', reloading
+2025-04-05 18:06:03,060 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\routes\\videos.py', reloading
+2025-04-05 18:06:04,019 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:06:07,840 - werkzeug - WARNING -  * Debugger is active!
+2025-04-05 18:06:07,846 - werkzeug - INFO -  * Debugger PIN: 538-203-687
+2025-04-05 18:06:07,876 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:07] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:06:08,055 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:06:08,056 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:08] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:06:08,060 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:08] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:06:09,459 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:06:09,459 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:09] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:06:09,464 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:09] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:06:10,062 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:06:10,062 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:10] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:06:10,066 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:10] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:06:10,273 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:06:10,274 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:10] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:06:10,282 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:10] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:06:10,468 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:06:10,468 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:10] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:06:10,473 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:10] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:06:10,637 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:06:10,638 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:10] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:06:10,641 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:10] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:06:17,247 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\flask\\templating.py', reloading
+2025-04-05 18:06:17,566 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\jinja2\\loaders.py', reloading
+2025-04-05 18:06:17,571 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\jinja2\\exceptions.py', reloading
+2025-04-05 18:06:17,581 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\jinja2\\ext.py', reloading
+2025-04-05 18:06:17,591 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\jinja2\\runtime.py', reloading
+2025-04-05 18:06:17,603 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\AppData\\Local\\Programs\\Python\\Python312\\Lib\\site-packages\\jinja2\\bccache.py', reloading
+2025-04-05 18:06:18,478 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:06:22,226 - werkzeug - WARNING -  * Debugger is active!
+2025-04-05 18:06:22,231 - werkzeug - INFO -  * Debugger PIN: 538-203-687
+2025-04-05 18:06:22,257 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:22] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:06:24,259 - app - ERROR - Error al cargar configuración de cámara 1: no such column: max_neck_angle
+2025-04-05 18:06:24,260 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:24] "[32mGET /video/config/1 HTTP/1.1[0m" 302 -
+2025-04-05 18:06:24,265 - werkzeug - INFO - 127.0.0.1 - - [05/Apr/2025 18:06:24] "GET /video HTTP/1.1" 200 -
+2025-04-05 18:07:44,725 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\routes\\videos.py', reloading
+2025-04-05 18:07:44,726 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\routes\\videos.py', reloading
+2025-04-05 18:07:45,679 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:07:49,463 - werkzeug - WARNING -  * Debugger is active!
+2025-04-05 18:07:49,467 - werkzeug - INFO -  * Debugger PIN: 538-203-687
+2025-04-05 18:10:29,964 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\routes\\videos.py', reloading
+2025-04-05 18:10:29,965 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\routes\\videos.py', reloading
+2025-04-05 18:10:30,767 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:10:34,689 - werkzeug - WARNING -  * Debugger is active!
+2025-04-05 18:10:34,693 - werkzeug - INFO -  * Debugger PIN: 538-203-687
+2025-04-05 18:11:26,463 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\services\\video_streamer.py', reloading
+2025-04-05 18:11:26,464 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\services\\video_streamer.py', reloading
+2025-04-05 18:11:26,465 - werkzeug - INFO -  * Detected change in 'C:\\Users\\Bartolomeo\\Documents\\1 .- PROYECTOS\\Luis_Jahuira\\terminal\\services\\video_streamer.py', reloading
+2025-04-05 18:11:27,740 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:13:27,993 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:15:04,376 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:18:10,194 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
+2025-04-05 18:20:46,305 - werkzeug - INFO -  * Restarting with watchdog (windowsapi)
