@@ -1,5 +1,9 @@
 *.mp4
 *.venv
+*.pyc
 *.venv/
 venv
 venv/
+
+*__pycache__
+*/__pycache__

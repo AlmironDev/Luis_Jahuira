@@ -70,6 +70,25 @@ def init_db():
                 descripcion TEXT
             )
         ''')
+        
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS alertas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_camara INTEGER NOT NULL,
+                mensaje TEXT NOT NULL,
+                tipo TEXT NOT NULL,  
+                severidad TEXT NOT NULL, 
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (id_camara) REFERENCES camaras(id)
+            )
+        ''')
+        
+        # Índices para mejorar el rendimiento de las consultas
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_usuario ON notificaciones(id_usuario)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_camara ON notificaciones(id_camara)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_fecha ON notificaciones(fecha)')
+
+
 
         conn.commit()
         
