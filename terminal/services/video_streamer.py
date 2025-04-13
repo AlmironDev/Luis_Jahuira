@@ -8,6 +8,7 @@ import logging
 from enum import IntEnum, auto
 from typing import Optional, Dict, Tuple, List, Any
 import numpy as np
+from datetime import datetime  
 
 logging.basicConfig(
     level=logging.INFO,
@@ -60,7 +61,6 @@ class VideoStreamer:
         
         # Estado de alertas
         self.alert_states: Dict[int, Dict[str, Any]] = {}
-        self.db_conn = None  # Conexión a base de datos (opcional)
 
     def update_posture_config(self, new_config: Dict[str, Any]):
         """Actualiza la configuración de postura"""
@@ -125,11 +125,27 @@ class VideoStreamer:
                 return None
 
     def get_recent_alerts(self, camera_id: int, limit: int = 5) -> List[Dict]:
-        """Obtiene las alertas recientes para una cámara"""
+        """Obtiene y elimina las alertas más recientes para una cámara
+        
+        Args:
+            camera_id: ID de la cámara a consultar
+            limit: Máximo número de alertas a devolver (por defecto 5)
+        
+        Returns:
+            Lista de diccionarios con las alertas más recientes (puede estar vacía)
+            Las alertas devueltas son eliminadas del historial
+        """
         with self.lock:
-            if camera_id not in self.alert_history:
+            if camera_id not in self.alert_history or not self.alert_history[camera_id]:
                 return []
-            return self.alert_history[camera_id][-limit:]
+            
+            # Obtener las alertas más recientes (las últimas N)
+            recent_alerts = self.alert_history[camera_id][-limit:]
+            
+            # Eliminar las alertas que estamos devolviendo (slice assignment)
+            self.alert_history[camera_id] = self.alert_history[camera_id][:-len(recent_alerts)] or []
+            
+            return recent_alerts
 
     def _stream_worker(self, camera_id: int) -> None:
         """Procesa el stream de video"""
@@ -469,53 +485,60 @@ class VideoStreamer:
                 alert_state['bad_posture_start'] = None
                 alert_state['alert_shown'] = False
 
+
     def _trigger_alert(self, camera_id: int, message: str, alert_type: AlertType, 
-                      severity: AlertLevel = AlertLevel.WARNING) -> None:
-        """Dispara una alerta y la maneja adecuadamente"""
-        timestamp = time.time()
-        alert_key = f"{alert_type.name}_{severity.name}"
-        
-        # Verificar si ya hay una alerta similar reciente
-        if alert_key in self.active_alerts.get(camera_id, {}):
-            last_alert = self.active_alerts[camera_id][alert_key]
-            if timestamp - last_alert['timestamp'] < self.alert_cooldown:
-                return  # Ignorar alertas muy seguidas del mismo tipo
-        
-        # Registrar la alerta
-        alert_data = {
-            'message': message,
-            'type': alert_type,
-            'severity': severity,
-            'timestamp': timestamp,
-            'camera_id': camera_id
-        }
-        
-        # Actualizar estructuras de datos
-        with self.lock:
-            if camera_id not in self.alert_history:
-                self.alert_history[camera_id] = []
-            self.alert_history[camera_id].append(alert_data)
+                    severity: AlertLevel = AlertLevel.WARNING) -> None:
+        """Dispara una alerta y la maneja adecuadamente con manejo robusto de timestamps"""
+        try:
+            timestamp = time.time()
+            # print(f"Timestamp captured: {timestamp}")
             
-            if camera_id not in self.active_alerts:
-                self.active_alerts[camera_id] = {}
-            self.active_alerts[camera_id][alert_key] = alert_data
-        
-        # Loggear la alerta
-        logger.warning(f"ALERTA [{severity.name}] cámara {camera_id}: {message}")
-        
-        # Guardar en la base de datos si hay conexión
-        if self.db_conn:
-            try:
-                cursor = self.db_conn.cursor()
-                cursor.execute('''
-                    INSERT INTO alertas (id_camara, mensaje, tipo, severidad, fecha)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (camera_id, message, alert_type.name, severity.name, 
-                      time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(timestamp))))
-                self.db_conn.commit()
-                logger.info(f"Alerta guardada en BD para cámara {camera_id}")
-            except Exception as e:
-                logger.error(f"Error al guardar alerta en BD: {str(e)}")
+            alert_key = f"{alert_type.name}_{severity.name}"
+            
+            # Verificar si ya hay una alerta similar reciente
+            if alert_key in self.active_alerts.get(camera_id, {}):
+                last_alert = self.active_alerts[camera_id][alert_key]
+                if timestamp - last_alert['timestamp_num'] < self.alert_cooldown:
+                    return  # Ignorar alertas muy seguidas del mismo tipo
+            
+            # Registrar la alerta con timestamp robusto
+            alert_data = {
+                'message': message,
+                'type_name': alert_type.name,
+                'severity_name': severity.name,
+                'severity_value': severity.value,
+                'timestamp_num': timestamp,  # Timestamp numérico para cálculos
+                'timestamp_iso': datetime.fromtimestamp(timestamp).isoformat(),  # Formato legible
+                'camera_id': camera_id,
+            }
+            
+            print(f"Alert data prepared: {alert_data}")
+            
+            # Actualizar estructuras de datos
+            with self.lock:
+                # Inicializar si no existe
+                if camera_id not in self.alert_history:
+                    self.alert_history[camera_id] = []
+                if camera_id not in self.active_alerts:
+                    self.active_alerts[camera_id] = {}
+                
+                # Añadir al historial
+                self.alert_history[camera_id].append(alert_data)
+                
+                # Actualizar alertas activas
+                self.active_alerts[camera_id][alert_key] = alert_data
+            
+            # Loggear la alerta
+            logger.warning(
+                f"ALERTA [{severity.name}] cámara {camera_id} - "
+                f"{message} (Timestamp: {alert_data['timestamp_iso']})"
+            )
+            
+        except Exception as e:
+            logger.error(f"Error al procesar alerta: {str(e)}")
+            raise
+                
+
 
     @staticmethod
     def _get_landmark_coords(landmarks, landmark_type) -> Optional[Tuple[float, float]]:
@@ -564,12 +587,7 @@ if __name__ == "__main__":
                 cv2.imshow('Posture Monitor', cv2.imdecode(frame, 1))
             
             # Mostrar alertas recientes
-            recent_alerts = streamer.get_recent_alerts(0)
-            if recent_alerts:
-                print("\nAlertas recientes:")
-                for alert in recent_alerts:
-                    print(f"[{time.strftime('%H:%M:%S', time.localtime(alert['timestamp']))}] {alert['message']}")
-            
+  
             # Salir con 'q'
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break

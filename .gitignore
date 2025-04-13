@@ -1,9 +1,13 @@
-*.mp4
-*.venv
+# Archivos de Python compilados
 *.pyc
-*.venv/
-venv
-venv/
+__pycache__/
+**/__pycache__/
 
-*__pycache__
-*/__pycache__
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Archivos multimedia
+*.mp4

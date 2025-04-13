@@ -78,7 +78,7 @@ def init_db():
                 mensaje TEXT NOT NULL,
                 tipo TEXT NOT NULL,  
                 severidad TEXT NOT NULL, 
-                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                fecha TIMESTAMP ,
                 FOREIGN KEY (id_camara) REFERENCES camaras(id)
             )
         ''')

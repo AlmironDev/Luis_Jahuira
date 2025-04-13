@@ -16,8 +16,9 @@ def configure_alertas_routes(app):
             id_camara = request.args.get('camara', type=int)
             tipo = request.args.get('tipo')
             severidad = request.args.get('severidad')
-            resuelta = request.args.get('resuelta', type=int)  # 0 o 1
-            dias = request.args.get('dias', type=int)
+
+            fecha = request.args.get('fecha')
+            print("fecha",fecha)
             
             conn = get_db_connection()
             
@@ -43,18 +44,40 @@ def configure_alertas_routes(app):
                 query += ' AND a.severidad = ?'
                 params.append(severidad)
             
-            if resuelta is not None:
-                query += ' AND a.resuelta = ?'
-                params.append(resuelta)
-            
-            if dias:
-                fecha_limite = datetime.now() - timedelta(days=dias)
-                query += ' AND a.fecha >= ?'
-                params.append(fecha_limite.strftime('%Y-%m-%d %H:%M:%S'))
+            print("fecha",fecha)
+            # if fecha:
+            #     query += f" AND a.fecha = date('{fecha}')"
+            if fecha:
+                try:
+                    # Validar y convertir el formato de fecha
+                    fecha_obj = datetime.strptime(fecha, '%Y-%m-%d')
+                    # Usar parámetros preparados para seguridad
+                    query += ' AND date(a.fecha) = date(?)'
+                    params.append(fecha_obj.strftime('%Y-%m-%d'))
+                except ValueError:
+                    flash('Formato de fecha inválido. Use YYYY-MM-DD', 'error')
+               
             
             # Contar total para paginación
             count_query = 'SELECT COUNT(*) FROM (' + query + ')'
+            
+            print("count_query",count_query)
             total = conn.execute(count_query, params).fetchone()[0]
+            
+            # Obtener conteos por severidad (NUEVO)
+            counts_query = '''
+                SELECT 
+                    SUM(CASE WHEN severidad = 'CRITICAL' THEN 1 ELSE 0 END) as critical,
+                    SUM(CASE WHEN severidad = 'WARNING' THEN 1 ELSE 0 END) as warning,
+                    SUM(CASE WHEN severidad = 'INFO' THEN 1 ELSE 0 END) as info
+                FROM alertas
+            '''
+            counts_result = conn.execute(counts_query).fetchone()
+            counts = {
+                'CRITICAL': counts_result['critical'],
+                'WARNING': counts_result['warning'],
+                'INFO': counts_result['info']
+            }
             
             # Ordenar y paginar
             query += ' ORDER BY a.fecha DESC LIMIT ? OFFSET ?'
@@ -73,12 +96,11 @@ def configure_alertas_routes(app):
                                 page=page,
                                 per_page=per_page,
                                 total=total,
+                                counts=counts,  # NUEVO: agregamos los conteos
                                 filtros={
                                     'camara': id_camara,
                                     'tipo': tipo,
-                                    'severidad': severidad,
-                                    'resuelta': resuelta,
-                                    'dias': dias
+                                    'severidad': severidad
                                 })
             
         except Exception as e:

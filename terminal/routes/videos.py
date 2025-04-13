@@ -2,7 +2,7 @@ from flask import render_template, request, redirect, url_for, flash, abort, jso
 from database import get_db_connection
 from services.video_streamer import VideoStreamer
 import time
-
+from datetime import datetime
 video_streamer = VideoStreamer()
 
 def configure_videos_routes(app):
@@ -52,6 +52,7 @@ def configure_videos_routes(app):
             if camara_dict['activa']:
                 video_streamer.start_stream(camera_id, camara_dict['url'])
                 
+                
             return render_template('video/config.html', camara=camara_dict)
             
         except Exception as e:
@@ -70,6 +71,30 @@ def configure_videos_routes(app):
                           b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
                 else:
                     time.sleep(0.1)
+                alertas = video_streamer.get_recent_alerts(camera_id)
+                if alertas:
+                    print("alertas",alertas)
+                    conn = get_db_connection()
+                    try:
+                        for alerta in alertas:
+                            fecha_formatted = datetime.strptime(alerta['timestamp_iso'], '%Y-%m-%dT%H:%M:%S.%f').strftime("'%Y-%m-%d %H:%M:%S.%f'")
+                            query = f'''
+                                INSERT INTO alertas (
+                                    id_camara, 
+                                    mensaje, 
+                                    tipo, 
+                                    severidad, 
+                                    fecha
+                                ) VALUES ({alerta['camera_id']},'{alerta['message']}', '{alerta['type_name']}', '{alerta['severity_name']}', {fecha_formatted})
+                            '''
+                            print("query",query)
+                            conn.execute(query)
+                        conn.commit()
+                        print('Alertas registradas correctamente!', 'success')
+                    except Exception as e:
+                        print(f"Error al insertar alertas: {str(e)}")
+                    finally:
+                        conn.close()
 
         return Response(generate(),
                       mimetype='multipart/x-mixed-replace; boundary=frame')
