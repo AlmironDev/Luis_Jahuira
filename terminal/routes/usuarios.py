@@ -1,20 +1,19 @@
 from flask import render_template, request, redirect, url_for, flash, abort
 from werkzeug.security import generate_password_hash
 from database import get_db_connection
+from .login import login_required
 
 def configure_usuarios_routes(app):
     @app.route('/usuarios')
+    # @login_required()  # Requiere login
     def usuarios_index():
         """Lista todos los usuarios registrados"""
         conn = get_db_connection()
-        print("conect",conn)
         usuarios = conn.execute('''
             SELECT *
             FROM usuarios
             ORDER BY nombre ASC
         ''').fetchall()
-
-        print("Usuarios:", usuarios)  
 
         conn.close()
         return render_template('usuarios/index.html', usuarios=usuarios)

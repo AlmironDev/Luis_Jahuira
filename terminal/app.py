@@ -1,3 +1,4 @@
+from datetime import timedelta
 from flask import Flask, render_template
 from database import init_db
 from routes import configure_all_routes
@@ -10,9 +11,6 @@ init_db()
 
 # Configurar todas las rutas
 configure_all_routes(app)
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 
 if __name__ == '__main__':
