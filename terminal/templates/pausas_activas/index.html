@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pausas Activas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+    <style>
+        .img-thumbnail {
+            max-width: 100px;
+            max-height: 100px;
+        }
+        .day-checkbox {
+            display: inline-block;
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-people-fill"></i> ⏱️ Pausas Activas Programadas
+            </h1>
+            <div>
+                <a href="{{ url_for('pausas_activas_add') }}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Nueva Pausa activa
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Inicio
+                </a>
+            </div>
+        </div>
+
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">📋 Listado de Pausas</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Mensaje</th>
+                                <th>Imagen</th>
+                                <th>Hora</th>
+                                <th>Días</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pausa in pausas %}
+                            <tr>
+                                <td>{{ pausa.usuario_nombre }}</td>
+                                <td>{{ pausa.mensaje }}</td>
+                                <td>
+                                    {% if pausa.imagen %}
+                                    <img src="{{ url_for('static', filename='uploads/pausas/' + pausa.imagen) }}" 
+                                         class="img-thumbnail" alt="Imagen pausa">
+                                    {% else %}
+                                    <span class="text-muted">Sin imagen</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ pausa.hora_formateada }}</td>
+                                <td>
+                                    {% if pausa.dias_semana %}
+                                        {{ pausa.dias_semana.split(',')|join(', ') }}
+                                    {% else %}
+                                        Diario
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pausa.activa %}
+                                        <span class="badge bg-success">Activa</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactiva</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('pausas_activas_edit', id=pausa.id) }}" 
+                                       class="btn btn-sm btn-warning" title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="post" action="{{ url_for('pausas_activas_delete', id=pausa.id) }}" 
+                                          style="display: inline;" onsubmit="return confirm('¿Eliminar esta pausa activa?')">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">No hay pausas activas programadas</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

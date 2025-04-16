@@ -51,7 +51,7 @@
                     <div class="card-body text-center">
                         <h3 class="card-title">🔔 Notificaciones</h3>
                         <p class="card-text">Administre notificaciones del sistema</p>
-                        <a href="{{ url_for('notificacion_index') }}" class="btn btn-warning stretched-link">Ir a Notificaciones</a>
+                        <a href="{{ url_for('notificacion_index') }}" class="btn btn-info stretched-link">Ir a Notificaciones</a>
                     </div>
                 </div>
             </div>
@@ -66,10 +66,19 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md-4 mb-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <h3 class="card-title">✅ Pausas Activas</h3>
+                        <p class="card-text">Administre Pausas </p>
+                        <a href="{{ url_for('pausas_activas_index') }}" class="btn btn-success stretched-link">Ir a Pausas activas</a>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <footer class="mt-5 text-center text-muted">
-            <small>Sistema desarrollado con Flask</small>
+            <small>Sistema desarrollado por Almiron Bill</small>
         </footer>
     </div>
 

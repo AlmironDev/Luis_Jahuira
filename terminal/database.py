@@ -83,6 +83,20 @@ def init_db():
             )
         ''')
         
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS pausas_activas(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_usuario INTEGER NOT NULL,
+                mensaje TEXT,
+                imagen TEXT,
+                hora_pausa TIMESTAMP,  -- Almacenar como texto en formato HH:MM o como TIMESTAMP
+                dias_semana TEXT,  -- Para especificar días de la semana (ej. "Lunes,Miércoles,Viernes")
+                activa BOOLEAN DEFAULT 1,
+                FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+            )
+        ''')
+
+        
         # Índices para mejorar el rendimiento de las consultas
         conn.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_usuario ON notificaciones(id_usuario)')
         conn.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_camara ON notificaciones(id_camara)')
