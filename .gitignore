@@ -3,11 +3,4 @@
 __pycache__/
 **/__pycache__/
 
-# Entornos virtuales
-.venv/
-venv/
-env/
-ENV/
 
-# Archivos multimedia
-*.mp4
