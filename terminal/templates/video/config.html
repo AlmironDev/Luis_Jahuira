@@ -1,329 +1,106 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Configuración de Cámara - {{ camara['nombre'] }}</title>
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-      rel="stylesheet"
-    />
-    <style>
-      body {
-        background-color: #f8f9fa;
-        padding: 20px;
-      }
-      .config-container {
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-      .video-config-grid {
-        display: grid;
-        grid-template-columns: 1fr 350px;
-        gap: 20px;
-        margin-top: 20px;
-      }
-      .video-wrapper {
-        position: relative;
-        padding-bottom: 56.25%;
-        background: #000;
-        border-radius: 8px;
-        overflow: hidden;
-      }
-      .video-feed {
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-      }
-      .controls-panel {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      }
-      .form-range {
-        width: 100%;
-      }
-      .range-value {
-        display: inline-block;
-        width: 60px;
-        text-align: center;
-        font-weight: bold;
-        color: #4e73df;
-      }
-      .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        color: white;
-        z-index: 10;
-      }
-      .angle-display {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        background: rgba(0, 0, 0, 0.7);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 5px;
-        z-index: 5;
-        font-size: 14px;
-      }
-      @media (max-width: 992px) {
-        .video-config-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <div class="config-container">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>
-          <a
-            href="{{ url_for('video_index') }}"
-            class="btn btn-outline-secondary"
-          >
-            <i class="fas fa-arrow-left"></i> Volver
-          </a>
-          Configuración: {{ camara['nombre'] }}
-        </h1>
-        <div class="form-check form-switch">
-          <input class="form-check-input" type="checkbox" id="cameraToggle" {{
-          'checked' if camara['activa'] else '' }} style="width: 3em; height:
-          1.5em;">
-          <label class="form-check-label" for="cameraToggle">Activa</label>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuración de Cámara - {{ camara['nombre'] }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+  <style>
+    body { background-color: #f8f9fa; padding: 20px; }
+    .config-container { max-width: 1200px; margin: 0 auto; }
+    .video-config-grid { display: grid; grid-template-columns: 1fr 350px; gap: 20px; margin-top: 20px; }
+    .video-wrapper { position: relative; padding-bottom: 56.25%; background: #000; border-radius: 8px; overflow: hidden; }
+    .video-feed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+    .controls-panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    .range-value { display: inline-block; width: 60px; text-align: center; font-weight: bold; color: #4e73df; }
+    .loading-overlay { position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; color:white; z-index:10; }
+    @media (max-width: 992px) { .video-config-grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="config-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>
+        <a href="{{ url_for('video_index') }}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left"></i> Volver
+        </a>
+        Configuración: {{ camara['nombre'] }}
+      </h1>
+    </div>
+
+    <div class="video-config-grid">
+      <div class="video-wrapper">
+        <div class="loading-overlay" id="loadingOverlay">
+          <div class="spinner-border text-primary"></div>
         </div>
+        <img id="processedVideo" class="video-feed"
+             src="{{ url_for('video_feed', camera_id=camara['id']) }}"
+             onload="hideLoading()"
+             onerror="handleVideoError()" />
       </div>
 
-      <div class="video-config-grid">
-        <div class="video-wrapper">
-       
-          <div class="loading-overlay" id="loadingOverlay">
-            <div class="spinner-border text-primary"></div>
-          </div>
-          <img
-            id="processedVideo"
-            class="video-feed"
-            src="{{ url_for('video_feed', camera_id=camara['id']) if camara['activa'] else '/static/camera-offline.jpg' }}"
-            onload="document.getElementById('loadingOverlay').style.display = 'none'"
-            onerror="this.onerror=null; this.src='/static/error.jpg'; document.getElementById('loadingOverlay').style.display = 'none'"
-          />
+      <div class="controls-panel">
+        <h4 class="mb-4"><i class="fas fa-sliders-h"></i> Ajustes de Postura</h4>
+
+        {% for campo, etiqueta, unidad, min, max, step in [
+          ('muslo_rodilla_pie', 'Ángulo Mínimo', '°', 0, 180, 1),
+          ('espalda_cadera_muslo', 'Ángulo Máximo', '°', 0, 360, 1),
+          ('hombros_brazos', 'Hombros Mín', 'm', 0.00, 1, 0.05),
+          ('espalda_cuello_cabeza', 'Hombros Máx', 'm', 0.5, 2, 0.05),
+          ('manos_muneca', 'Manos Mín', 'cm', 10, 100, 1)
+        ] %}
+        <div class="mb-3">
+          <label class="form-label">
+            {{ etiqueta }}:
+            <span class="range-value" id="{{ campo }}Value">{{ camara[campo] }}</span>{{ unidad }}
+          </label>
+          <input type="range" class="form-range"
+                 name="{{ campo }}"
+                 min="{{ min }}" max="{{ max }}" step="{{ step }}"
+                 value="{{ camara[campo] }}"
+                 oninput="updateRangeValue(this)" />
         </div>
+        {% endfor %}
 
-        <div class="controls-panel">
-          <h4 class="mb-4">
-            <i class="fas fa-sliders-h"></i> Ajustes de Postura
-          </h4>
-
-          <div class="mb-3">
-            <label class="form-label">
-              Ángulo Mínimo:
-              <span class="range-value" id="angulo_minValue"
-                >{{ camara['angulo_min'] }}</span
-              >°
-            </label>
-            <input
-              type="range"
-              class="form-range"
-              name="angulo_min"
-              min="0"
-              max="180"
-              value="{{ camara['angulo_min'] }}"
-              oninput="updateRangeValue(this)"
-            />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">
-              Ángulo Máximo:
-              <span class="range-value" id="angulo_maxValue"
-                >{{ camara['angulo_max'] }}</span
-              >°
-            </label>
-            <input
-              type="range"
-              class="form-range"
-              name="angulo_max"
-              min="0"
-              max="360"
-              value="{{ camara['angulo_max'] }}"
-              oninput="updateRangeValue(this)"
-            />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">
-              Hombros Mín:
-              <span class="range-value" id="hombros_minValue"
-                >{{ camara['hombros_min'] }}</span
-              >m
-            </label>
-            <input
-              type="range"
-              class="form-range"
-              name="hombros_min"
-              min="0.00"
-              max="1"
-              step="0.05"
-              value="{{ camara['hombros_min'] }}"
-              oninput="updateRangeValue(this)"
-            />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">
-              Hombros Máx:
-              <span class="range-value" id="hombros_maxValue"
-                >{{ camara['hombros_max'] }}</span
-              >m
-            </label>
-            <input
-              type="range"
-              class="form-range"
-              name="hombros_max"
-              min="0.5"
-              max="2"
-              step="0.05"
-              value="{{ camara['hombros_max'] }}"
-              oninput="updateRangeValue(this)"
-            />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">
-              Manos Mín:
-              <span class="range-value" id="manos_minValue"
-                >{{ camara['manos_min'] }}</span
-              >cm
-            </label>
-            <input
-              type="range"
-              class="form-range"
-              name="manos_min"
-              min="10"
-              max="100"
-              value="{{ camara['manos_min'] }}"
-              oninput="updateRangeValue(this)"
-            />
-          </div>
-
-          <div class="mb-3">
-            <label class="form-label">
-              Manos Máx:
-              <span class="range-value" id="manos_maxValue"
-                >{{ camara['manos_max'] }}</span
-              >cm
-            </label>
-            <input
-              type="range"
-              class="form-range"
-              name="manos_max"
-              min="50"
-              max="200"
-              value="{{ camara['manos_max'] }}"
-              oninput="updateRangeValue(this)"
-            />
-          </div>
-
-          <div class="d-grid gap-2 mt-4">
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick="saveSettings()"
-            >
-              <i class="fas fa-save"></i> Guardar Cambios
-            </button>
-          </div>
+        <div class="d-grid gap-2 mt-4">
+          <button type="button" class="btn btn-primary" onclick="saveSettings()">
+            <i class="fas fa-save"></i> Guardar Cambios
+          </button>
         </div>
       </div>
     </div>
+  </div>
 
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Actualiza los valores de los rangos
-        function updateRangeValue(input) {
-            const valueDisplay = document.getElementById(`${input.name}Value`);
-            if (valueDisplay) {
-                valueDisplay.textContent = input.value;
-            }
-        }
-        
-        // Guarda los ajustes
-        function saveSettings() {
-            const settings = {
-                angulo_min: document.querySelector('[name="angulo_min"]').value,
-                angulo_max: document.querySelector('[name="angulo_max"]').value,
-                hombros_min: document.querySelector('[name="hombros_min"]').value,
-                hombros_max: document.querySelector('[name="hombros_max"]').value,
-                manos_min: document.querySelector('[name="manos_min"]').value,
-                manos_max: document.querySelector('[name="manos_max"]').value
-            };
-            
-            fetch(`/api/update_angles/{{ camara['id'] }}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(settings)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Configuración guardada correctamente');
-                } else {
-                    alert('Error al guardar: ' + (data.error || 'Desconocido'));
-                }
-            })
-            .catch(error => {
-                alert('Error de conexión');
-                console.error('Error:', error);
-            });
-        }
-        
-        // Maneja el toggle de la cámara
-        document.getElementById('cameraToggle').addEventListener('change', function() {
-            fetch(`/api/toggle_camera/{{ camara['id'] }}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ active: this.checked })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    location.reload();
-                } else {
-                    this.checked = !this.checked;
-                    alert('Error: ' + (data.error || 'Desconocido'));
-                }
-            })
-            .catch(error => {
-                this.checked = !this.checked;
-                console.error('Error:', error);
-            });
-        });
-        
-        // Actualiza el video cada 2 segundos
-        setInterval(() => {
-            const video = document.getElementById('processedVideo');
-            if (document.getElementById('cameraToggle').checked) {
-                video.src = video.src.split('?')[0] + '?t=' + new Date().getTime();
-            }
-        }, 2000);
-    </script>
+  <script>
+    function hideLoading() {
+      document.getElementById('loadingOverlay').style.display = 'none';
+    }
+    function handleVideoError() {
+      const overlay = document.getElementById('loadingOverlay');
+      overlay.innerHTML = 'Error al cargar el video';
+      overlay.style.display = 'flex';
+    }
+    function updateRangeValue(input) {
+      const display = document.getElementById(`${input.name}Value`);
+      if (display) display.textContent = input.value;
+    }
+    function saveSettings() {
+      const settings = {};
+      document.querySelectorAll('.form-range').forEach(i => settings[i.name] = i.value);
+      fetch(`/api/update_angles/{{ camara['id'] }}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      })
+      .then(res => res.json())
+      .then(data => alert(data.success ? 'Configuración guardada correctamente' : `Error: ${data.error}`))
+      .catch(() => alert('Error de conexión con el servidor'));
+    }
+    // Recarga el frame cada 2 segundos para mantener el stream fresco
+    setInterval(() => {
+      const img = document.getElementById('processedVideo');
+      img.src = img.src.split('?')[0] + '?t=' + Date.now();
+    }, 2000);
+  </script>
 </body>
 </html>

@@ -74,10 +74,11 @@
                         <div class="loading-overlay">
                             <div class="spinner-border"></div>
                         </div>
-                        <img src="{{ camara['url'] }}" 
-                             onload="this.previousElementSibling.style.display='none'"
-                             onerror="this.onerror=null; this.src='/static/error.jpg'; this.previousElementSibling.style.display='none'"
-                             alt="Stream de {{ camara['nombre'] }}">
+                        <img src="{{ url_for('video_feed', camera_id=camara['id']) }}"
+     onload="this.previousElementSibling.style.display='none'"
+     onerror="this.onerror=null; this.src='/static/error.jpg'; this.previousElementSibling.style.display='none'"
+     alt="Stream de {{ camara['nombre'] }}">
+
                     </div>
                 </div>
             </div>

@@ -1,11 +1,10 @@
 from flask import render_template, request, redirect, url_for, flash, abort
-from werkzeug.security import generate_password_hash
+
 from database import get_db_connection
-from .login import login_required
+
 
 def configure_usuarios_routes(app):
     @app.route('/usuarios')
-    # @login_required()  # Requiere login
     def usuarios_index():
         """Lista todos los usuarios registrados"""
         conn = get_db_connection()
@@ -24,24 +23,22 @@ def configure_usuarios_routes(app):
         if request.method == 'POST':
             nombre = request.form.get('nombre')
             username = request.form.get('username')
-            password = request.form.get('password')
             dni = request.form.get('dni')
             role = request.form.get('role', 1)
             activo = 1 if request.form.get('activo') else 0
 
-            if not nombre or not username or not password or not dni:
+            if not nombre or not username  or not dni:
                 flash('Todos los campos son obligatorios!', 'error')
             else:
                 conn = get_db_connection()
                 try:
                     conn.execute('''
                         INSERT INTO usuarios (
-                            nombre, username, password, dni, role, activo
-                        ) VALUES (?, ?, ?, ?, ?, ?)
+                            nombre, username, dni, role, activo
+                        ) VALUES (?, ?, ?, ?, ?)
                     ''', (
                         nombre, 
                         username, 
-                        generate_password_hash(password),
                         dni,
                         role,
                         activo
@@ -71,30 +68,19 @@ def configure_usuarios_routes(app):
             dni = request.form.get('dni')
             role = request.form.get('role', 1)
             activo = 1 if request.form.get('activo') else 0
-            password = request.form.get('password')
 
             if not nombre or not username or not dni:
                 flash('Los campos básicos son obligatorios!', 'error')
             else:
                 conn = get_db_connection()
                 try:
-                    if password:
-                        conn.execute('''
-                            UPDATE usuarios SET
-                                nombre = ?, username = ?, dni = ?,
-                                role = ?, activo = ?, password = ?
-                            WHERE id = ?
-                        ''', (
-                            nombre, username, dni, role, activo,
-                            generate_password_hash(password), id
-                        ))
-                    else:
-                        conn.execute('''
-                            UPDATE usuarios SET
-                                nombre = ?, username = ?, dni = ?,
-                                role = ?, activo = ?
-                            WHERE id = ?
-                        ''', (nombre, username, dni, role, activo, id))
+                   
+                    conn.execute('''
+                        UPDATE usuarios SET
+                            nombre = ?, username = ?, dni = ?,
+                            role = ?, activo = ?
+                        WHERE id = ?
+                    ''', (nombre, username, dni, role, activo, id))
                     
                     conn.commit()
                     flash('Usuario actualizado correctamente!', 'success')

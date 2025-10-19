@@ -18,9 +18,8 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nombre TEXT NOT NULL,
                 username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                role INTEGER NOT NULL DEFAULT 1,  -- 1=usuario normal, 2=admin
-                dni TEXT UNIQUE NOT NULL,  -- Cambiado a TEXT para manejar diferentes formatos
+                role INTEGER NOT NULL DEFAULT 1, 
+                dni TEXT UNIQUE NOT NULL,  
                 fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 activo BOOLEAN DEFAULT 1
             )
@@ -33,12 +32,11 @@ def init_db():
                 nombre TEXT NOT NULL,
                 url TEXT UNIQUE NOT NULL,
                 descripcion TEXT,
-                angulo_min INTEGER NOT NULL DEFAULT 45,  -- Ángulo mínimo en grados
-                angulo_max INTEGER NOT NULL DEFAULT 135, -- Ángulo máximo en grados
-                hombros_min REAL NOT NULL DEFAULT 0.5,    -- Distancia mínima entre hombros
-                hombros_max REAL NOT NULL DEFAULT 1.5,   -- Distancia máxima entre hombros
-                manos_min INTEGER NOT NULL DEFAULT 30,   -- Distancia mínima de manos
-                manos_max INTEGER NOT NULL DEFAULT 150,   -- Distancia máxima de manos
+                muslo_rodilla_pie INTEGER NOT NULL DEFAULT 90,  
+                espalda_cadera_muslo INTEGER NOT NULL DEFAULT 90, 
+                hombros_brazos INTEGER NOT NULL DEFAULT 90, 
+                espalda_cuello_cabeza INTEGER NOT NULL DEFAULT 90,  
+                manos_muneca INTEGER NOT NULL DEFAULT 90,   
                 ubicacion TEXT,
                 activa BOOLEAN DEFAULT 1,
                 fecha_instalacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
