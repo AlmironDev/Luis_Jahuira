@@ -6,17 +6,23 @@ mp_drawing = mp.solutions.drawing_utils
 mp_hands = mp.solutions.hands
 mp_pose = mp.solutions.pose
 
-def calculate_angle(a, b, c):
-    ang = math.degrees(
-        math.atan2(c[1] - b[1], c[0] - b[0]) - math.atan2(a[1] - b[1], a[0] - b[0])
-    )
-    return ang + 360 if ang < 0 else ang
+def calculate_angle_3d(a, b, c):
+    ba = [a[i] - b[i] for i in range(3)]
+    bc = [c[i] - b[i] for i in range(3)]
+    dot = sum(ba[i] * bc[i] for i in range(3))
+    mag_ba = math.sqrt(sum(x**2 for x in ba))
+    mag_bc = math.sqrt(sum(x**2 for x in bc))
+    cos_angle = dot / (mag_ba * mag_bc)
+    return math.degrees(math.acos(max(min(cos_angle, 1), -1)))
+
 
 # video_path = "VID-20250127-WA0001.mp4"
 
 video_path = "VID-20250127-WA0004.mp4"
 
 cap = cv2.VideoCapture(video_path)
+
+
 
 with mp_hands.Hands(
     min_detection_confidence=0.5, min_tracking_confidence=0.5
