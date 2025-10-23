@@ -69,18 +69,26 @@ def init_db():
             )
         ''')
         
+        # En tu archivo de base de datos o donde creas las tablas
         conn.execute('''
             CREATE TABLE IF NOT EXISTS alertas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 id_camara INTEGER NOT NULL,
-                mensaje TEXT NOT NULL,
-                tipo TEXT NOT NULL,  
-                severidad TEXT NOT NULL, 
-                fecha TIMESTAMP ,
+                tipo_angulo TEXT NOT NULL,           -- Ej: 'rodilla_izq', 'codo_der', etc.
+                valor_angulo REAL NOT NULL,          -- Valor numérico del ángulo detectado
+                angulo_objetivo REAL NOT NULL,       -- Valor objetivo (90° o 180°)
+                nivel_alerta TEXT NOT NULL,          -- 'WARNING' o 'CRITICAL'
+                duracion_segundos INTEGER,           -- Duración en segundos de la mala postura
+                fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (id_camara) REFERENCES camaras(id)
             )
         ''')
-        
+
+        # También crear índices para mejor performance
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_alertas_fecha ON alertas(fecha)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_alertas_nivel ON alertas(nivel_alerta)')
+        conn.execute('CREATE INDEX IF NOT EXISTS idx_alertas_camara ON alertas(id_camara)')
+                
         conn.execute('''
             CREATE TABLE IF NOT EXISTS pausas_activas(
                 id INTEGER PRIMARY KEY AUTOINCREMENT,

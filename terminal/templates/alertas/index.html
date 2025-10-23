@@ -4,43 +4,264 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Alertas del Sistema</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+
   <style>
-    .severity-CRITICAL { background-color: #ffebee; border-left: 4px solid #f44336; }
-    .severity-WARNING { background-color: #fff8e1; border-left: 4px solid #ffc107; }
-    .severity-INFO { background-color: #e8f5e9; border-left: 4px solid #4caf50; }
-    .badge-POSTURE { background-color: #3f51b5; }
-    .badge-HANDS { background-color: #9c27b0; }
-    .badge-MOVEMENT { background-color: #009688; }
-    .table-responsive { overflow-x: auto; }
-    .clickable-row { cursor: pointer; }
-    .clickable-row:hover { background-color: #f5f5f5 !important; }
-    .time-ago { font-size: 0.85rem; color: #6c757d; }
-    .filter-section { background-color: #f8f9fa; border-radius: 5px; padding: 15px; margin-bottom: 20px; }
+    :root {
+      --critical-bg: #ffebee;
+      --critical-border: #e53935;
+      --warning-bg: #fff8e1;
+      --warning-border: #ffb300;
+      --primary-color: #3949ab;
+      --secondary-color: #8e24aa;
+      --success-color: #00796b;
+    }
+
+    body {
+      background-color: #f6f7fb;
+      font-family: "Inter", "Segoe UI", sans-serif;
+    }
+
+    .card-shadow {
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .severity-CRITICAL { 
+      background-color: var(--critical-bg); 
+      border-left: 5px solid var(--critical-border); 
+    }
+    .severity-WARNING { 
+      background-color: var(--warning-bg); 
+      border-left: 5px solid var(--warning-border); 
+    }
+
+
+    .clickable-row { 
+      cursor: pointer; 
+      transition: all 0.15s ease; 
+    }
+    .clickable-row:hover { 
+      background-color: #f1f3f4 !important; 
+      transform: translateY(-1px);
+    }
+
+    .filter-section {
+      background: white;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+      margin-bottom: 25px;
+    }
+
+    .table thead th {
+      background-color: #fafafa;
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      border-top: none;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .table td {
+      vertical-align: middle;
+    }
+
+    .time-ago {
+      font-size: 0.8rem;
+      color: #6c757d;
+    }
+
+    .alert-summary {
+      background: linear-gradient(90deg, #e3f2fd, #f8f9fa);
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .pagination .page-item.active .page-link {
+      background-color: #007bff;
+      border-color: #007bff;
+      color: white;
+    }
+
+    .pagination .page-link {
+      color: #007bff;
+    }
+
+    .table-empty {
+      text-align: center;
+      padding: 50px 0;
+      color: #6c757d;
+    }
+
+    .table-empty i {
+      font-size: 3rem;
+      color: #adb5bd;
+    }
+
+    .page-title i {
+      font-size: 1.4rem;
+    }
+    
+    .badge-tipo {
+      font-size: 0.75rem;
+      padding: 0.35em 0.65em;
+    }
+    
+    .table-responsive {
+      max-height: 65vh;
+      overflow-y: auto;
+    }
+    
+    .angle-info {
+      font-size: 0.85rem;
+      color: #6c757d;
+    }
+    
+    .duration-badge {
+      background-color: #6c757d;
+      font-size: 0.7rem;
+    }
+    
+    .sortable {
+      cursor: pointer;
+      user-select: none;
+    }
+    
+    .sortable:hover {
+      background-color: rgba(0,0,0,0.03);
+    }
+    
+    .sort-icon {
+      font-size: 0.8rem;
+      margin-left: 5px;
+      opacity: 0.5;
+    }
+    
+    .export-btn {
+      background-color: #28a745;
+      border-color: #28a745;
+    }
+    
+    .stats-card {
+      transition: transform 0.2s;
+    }
+    
+    .stats-card:hover {
+      transform: translateY(-3px);
+    }
+    
+    @media (max-width: 768px) {
+      .filter-section .col-md-3,
+      .filter-section .col-md-2 {
+        margin-bottom: 15px;
+      }
+      
+      .table-responsive {
+        font-size: 0.85rem;
+      }
+      
+      .badge {
+        font-size: 0.7rem;
+      }
+    }
   </style>
 </head>
+
 <body>
   <div class="container mt-4">
+    <!-- Encabezado -->
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
-        <h1 class="h3 mb-0">
-          <i class="bi bi-exclamation-triangle-fill text-danger"></i> Alertas del Sistema
+        <h1 class="h3 mb-1 fw-bold page-title">
+          <i class="bi bi-activity text-primary me-2"></i>Alertas del Sistema
         </h1>
-        <p class="text-muted mb-0">Visualización y gestión de alertas generadas</p>
+        <p class="text-muted mb-0">Monitoreo y gestión de alertas automáticas</p>
       </div>
       <div>
-        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary me-2">
           <i class="bi bi-arrow-left"></i> Volver al inicio
         </a>
+        <button class="btn btn-success export-btn" id="exportBtn">
+          <i class="bi bi-download"></i> Exportar
+        </button>
       </div>
     </div>
 
-    <!-- Filtros mejorados -->
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="card card-shadow stats-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title text-muted">Total Alertas</h6>
+                <h3 class="text-primary">{{ total }}</h3>
+              </div>
+              <div class="align-self-center">
+                <i class="bi bi-bell text-primary" style="font-size: 1.5rem;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card card-shadow stats-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title text-muted">Críticas</h6>
+                <h3 class="text-danger">{{ counts.CRITICAL or 0 }}</h3>
+              </div>
+              <div class="align-self-center">
+                <i class="bi bi-exclamation-triangle text-danger" style="font-size: 1.5rem;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card card-shadow stats-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title text-muted">Advertencias</h6>
+                <h3 class="text-warning">{{ counts.WARNING or 0 }}</h3>
+              </div>
+              <div class="align-self-center">
+                <i class="bi bi-exclamation-circle text-warning" style="font-size: 1.5rem;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card card-shadow stats-card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between">
+              <div>
+                <h6 class="card-title text-muted">Cámaras Activas</h6>
+                <h3 class="text-success">{{ camaras|length }}</h3>
+              </div>
+              <div class="align-self-center">
+                <i class="bi bi-camera-video text-success" style="font-size: 1.5rem;"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filtros -->
     <div class="filter-section">
       <form method="get" class="row g-3">
         <div class="col-md-3">
-          <label for="camara" class="form-label">Cámara</label>
+          <label for="camara" class="form-label fw-semibold">Cámara</label>
           <select class="form-select" name="camara" id="camara">
             <option value="">Todas las cámaras</option>
             {% for camara in camaras %}
@@ -48,129 +269,133 @@
             {% endfor %}
           </select>
         </div>
-        
+
         <div class="col-md-2">
-          <label for="tipo" class="form-label">Tipo de Alerta</label>
+          <label for="tipo" class="form-label fw-semibold">Tipo</label>
           <select class="form-select" name="tipo" id="tipo">
-            <option value="">Todos los tipos</option>
-            <option value="POSTURE" {% if filtros.tipo == 'POSTURE' %}selected{% endif %}>POSTURE</option>
-            <option value="HANDS" {% if filtros.tipo == 'HANDS' %}selected{% endif %}>HANDS</option>
-            <option value="MOVEMENT" {% if filtros.tipo == 'MOVEMENT' %}selected{% endif %}>MOVEMENT</option>
+            <option value="">Todos</option>
+            <option value="POSTURE" {% if filtros.tipo == 'POSTURE' %}selected{% endif %}>Postura</option>
+            <option value="HANDS" {% if filtros.tipo == 'HANDS' %}selected{% endif %}>Manos</option>
+            <option value="MOVEMENT" {% if filtros.tipo == 'MOVEMENT' %}selected{% endif %}>Movimiento</option>
           </select>
         </div>
-        
+
         <div class="col-md-2">
-          <label for="severidad" class="form-label">Nivel de Severidad</label>
+          <label for="severidad" class="form-label fw-semibold">Severidad</label>
           <select class="form-select" name="severidad" id="severidad">
             <option value="">Todas</option>
-            <option value="CRITICAL" {% if filtros.severidad == 'CRITICAL' %}selected{% endif %}>CRITICAL</option>
-            <option value="WARNING" {% if filtros.severidad == 'WARNING' %}selected{% endif %}>WARNING</option>
-            <option value="INFO" {% if filtros.severidad == 'INFO' %}selected{% endif %}>INFO</option>
+            <option value="CRITICAL" {% if filtros.severidad == 'CRITICAL' %}selected{% endif %}>Crítica</option>
+            <option value="WARNING" {% if filtros.severidad == 'WARNING' %}selected{% endif %}>Advertencia</option>
           </select>
         </div>
-        
+
         <div class="col-md-3">
-          <label for="fecha" class="form-label">Rango de fechas</label>
+          <label for="fecha" class="form-label fw-semibold">Fecha</label>
           <input type="date" class="form-control" name="fecha" value="{{ filtros.fecha or '' }}">
         </div>
-        
+
         <div class="col-md-2 d-flex align-items-end gap-2">
           <button type="submit" class="btn btn-primary w-100">
             <i class="bi bi-funnel"></i> Filtrar
           </button>
-          <a href="?" class="btn btn-outline-secondary">
+          <a href="?" class="btn btn-outline-secondary w-100">
             <i class="bi bi-arrow-counterclockwise"></i>
           </a>
         </div>
       </form>
     </div>
 
-    <!-- Resumen de alertas -->
-    <div class="alert alert-info d-flex justify-content-between align-items-center mb-4">
+    <!-- Resumen -->
+    <div class="alert alert-summary d-flex justify-content-between align-items-center mb-4">
       <div>
-        <i class="bi bi-info-circle-fill me-2"></i>
-        Mostrando <strong>{{ alertas|length }}</strong> de <strong>{{ total }}</strong> alertas totales
+        <i class="bi bi-info-circle-fill me-2 text-primary"></i>
+        Mostrando <strong>{{ alertas|length }}</strong> de <strong>{{ total }}</strong> alertas
       </div>
       <div>
-        <span class="badge bg-danger me-2">CRITICAL: {{ counts.CRITICAL or 0 }}</span>
-        <span class="badge bg-warning me-2">WARNING: {{ counts.WARNING or 0 }}</span>
-        <span class="badge bg-success">INFO: {{ counts.INFO or 0 }}</span>
+        <span class="badge bg-danger me-2">Críticas: {{ counts.CRITICAL or 0 }}</span>
+        <span class="badge bg-warning text-dark me-2">Warning: {{ counts.WARNING or 0 }}</span>
       </div>
     </div>
 
-    <!-- Tabla de alertas mejorada -->
-    <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead class="table-light">
-          <tr>
-            <th style="width: 5%">ID</th>
-            <th style="width: 15%">Cámara</th>
-            <th style="width: 30%">Mensaje</th>
-            <th style="width: 10%">Tipo</th>
-            <th style="width: 10%">Severidad</th>
-            <th style="width: 20%">Fecha - Hora</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for alerta in alertas %}
-            <tr class="clickable-row severity-{{ alerta.severidad }}" onclick="window.location='#'">
-              <td>{{ alerta.id }}</td>
-              <td>
-                <strong>{{ alerta.nombre_camara }}</strong>
-                <div class="text-muted small">ID: {{ alerta.id_camara }}</div>
-              </td>
-              <td>
-                {{ alerta.mensaje }}
-                <div class="time-ago">{{ alerta.fecha }}</div>
-              </td>
-              <td>
-                <span class="badge badge-{{ alerta.tipo }} text-white">{{ alerta.tipo }}</span>
-              </td>
-              <td>
-                {% if alerta.severidad == 'CRITICAL' %}
-                  <span class="badge bg-danger">{{ alerta.severidad }}</span>
-                {% elif alerta.severidad == 'WARNING' %}
-                  <span class="badge bg-warning text-dark">{{ alerta.severidad }}</span>
-                {% else %}
-                  <span class="badge bg-success">{{ alerta.severidad }}</span>
-                {% endif %}
-              </td>
-              <td>{{ alerta.fecha[:10].split('-')[2] }}/{{ alerta.fecha[:10].split('-')[1] }}/{{ alerta.fecha[:10].split('-')[0] }} {{ alerta.fecha[11:19] }}</td>
-
-            </tr>
-          {% else %}
+    <!-- Tabla -->
+    <div class="card card-shadow">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="alertasTable">
+          <thead>
             <tr>
-              <td colspan="7" class="text-center py-4">
-                <i class="bi bi-exclamation-circle display-6 text-muted"></i>
-                <h5 class="mt-2">No se encontraron alertas</h5>
-                <p class="text-muted">Intenta ajustar los filtros o crear una nueva alerta</p>
-              </td>
+              <th class="sortable" data-sort="id">ID <i class="bi bi-arrow-down-up sort-icon"></i></th>
+              <th class="sortable" data-sort="camara">Cámara <i class="bi bi-arrow-down-up sort-icon"></i></th>
+              <th>Mensaje</th>
+              <th class="sortable" data-sort="tipo">Tipo <i class="bi bi-arrow-down-up sort-icon"></i></th>
+              <th class="sortable" data-sort="severidad">Severidad <i class="bi bi-arrow-down-up sort-icon"></i></th>
+              <th class="sortable" data-sort="fecha">Fecha / Hora <i class="bi bi-arrow-down-up sort-icon"></i></th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for alerta in alertas %}
+              <tr class="clickable-row severity-{{ alerta.severidad }}" data-id="{{ alerta.id }}">
+                <td><strong>{{ alerta.id }}</strong></td>
+                <td>
+                  <span class="fw-semibold">{{ alerta.nombre_camara }}</span><br>
+                  <small class="text-muted">ID: {{ alerta.id_camara }}</small>
+                </td>
+                <td>
+                  {{ alerta.mensaje }}
+                  {% if alerta.tipo_angulo %}
+                  <div class="angle-info mt-1">
+                    <span class="badge bg-light text-dark">{{ alerta.tipo_angulo }}</span>
+                    <span>Ángulo: {{ alerta.valor_angulo }}° / Objetivo: {{ alerta.angulo_objetivo }}°</span>
+                    {% if alerta.duracion_segundos %}
+                    <span class="badge duration-badge ms-1">{{ alerta.duracion_segundos }}s</span>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                  <div class="time-ago">{{ alerta.fecha }}</div>
+                </td>
+                <td><span class="badge  text-dark  badge-{{ alerta.tipo_angulo }} badge-tipo">{{ alerta.tipo_angulo }}</span></td>
+                <td>
+                  {% if alerta.nivel_alerta == 'CRITICAL' %}
+                    <span class="badge bg-danger">{{ alerta.nivel_alerta }}</span>
+                  {% elif alerta.nivel_alerta == 'WARNING' %}
+                    <span class="badge bg-warning text-dark">{{ alerta.nivel_alerta }}</span>
+                  {% else %}
+                    <span class="badge bg-success">{{ alerta.nivel_alerta }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ alerta.fecha[:10].split('-')[2] }}/{{ alerta.fecha[:10].split('-')[1] }}/{{ alerta.fecha[:10].split('-')[0] }} {{ alerta.fecha[11:19] }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" class="table-empty">
+                  <i class="bi bi-emoji-smile"></i>
+                  <h5 class="mt-2 fw-semibold">No hay alertas registradas</h5>
+                  <p class="text-muted mb-0">Prueba ajustando los filtros o revisa más tarde</p>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- Paginación mejorada -->
+    <!-- Paginación -->
     {% if alertas %}
-      <nav aria-label="Paginación de alertas">
-        <ul class="pagination justify-content-center mt-4">
+      <nav class="mt-4">
+        <ul class="pagination justify-content-center">
           <li class="page-item {% if page == 1 %}disabled{% endif %}">
-            <a class="page-link" href="?page={{ page-1 }}{% for key, value in filtros.items() %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+            <a class="page-link" href="?page={{ page-1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">
               <i class="bi bi-chevron-left"></i>
             </a>
           </li>
-          
           {% for p in range(1, (total // per_page) + 2) %}
             {% if p >= page-2 and p <= page+2 %}
               <li class="page-item {% if p == page %}active{% endif %}">
-                <a class="page-link" href="?page={{ p }}{% for key, value in filtros.items() %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ p }}</a>
+                <a class="page-link" href="?page={{ p }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">{{ p }}</a>
               </li>
             {% endif %}
           {% endfor %}
-          
           <li class="page-item {% if page == (total // per_page) + 1 %}disabled{% endif %}">
-            <a class="page-link" href="?page={{ page+1 }}{% for key, value in filtros.items() %}{% if value %}&{{ key }}={{ value }}{% endif %}{% endfor %}">
+            <a class="page-link" href="?page={{ page+1 }}{% for k, v in filtros.items() if v %}&{{ k }}={{ v }}{% endfor %}">
               <i class="bi bi-chevron-right"></i>
             </a>
           </li>
@@ -179,18 +404,124 @@
     {% endif %}
   </div>
 
+  <!-- Modal para detalles de alerta -->
+  <div class="modal fade" id="alertaModal" tabindex="-1" aria-labelledby="alertaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="alertaModalLabel">Detalles de la Alerta</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="modalBody">
+          <!-- Los detalles se cargarán aquí dinámicamente -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
-    // Función para mostrar tiempo relativo (ej: "hace 5 minutos")
-    function updateTimeAgo() {
-      document.querySelectorAll('.time-ago').forEach(el => {
-        // Implementar lógica para mostrar tiempo relativo
-      });
+    // Función para formatear fecha
+    function formatDate(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('es-ES') + ' ' + date.toLocaleTimeString('es-ES');
     }
-    
-    // Actualizar cada minuto
-    setInterval(updateTimeAgo, 60000);
-    document.addEventListener('DOMContentLoaded', updateTimeAgo);
+
+    // Función para calcular tiempo transcurrido
+    function timeAgo(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHrs = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHrs / 24);
+      
+      if (diffMins < 1) return 'Hace un momento';
+      if (diffMins < 60) return `Hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+      if (diffHrs < 24) return `Hace ${diffHrs} hora${diffHrs > 1 ? 's' : ''}`;
+      return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+    }
+
+    // Actualizar tiempos transcurridos
+    document.addEventListener('DOMContentLoaded', function() {
+      const timeElements = document.querySelectorAll('.time-ago');
+      timeElements.forEach(el => {
+        const originalDate = el.textContent.trim();
+        if (originalDate) {
+          el.textContent = timeAgo(originalDate);
+        }
+      });
+    });
+
+    // Ordenamiento de columnas
+    document.querySelectorAll('.sortable').forEach(header => {
+      header.addEventListener('click', function() {
+        const table = document.getElementById('alertasTable');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const columnIndex = Array.from(this.parentNode.children).indexOf(this);
+        const sortKey = this.getAttribute('data-sort');
+        const isAscending = !this.classList.contains('asc');
+        
+        // Limpiar clases de ordenamiento
+        document.querySelectorAll('.sortable').forEach(h => {
+          h.classList.remove('asc', 'desc');
+        });
+        
+        // Añadir clase de ordenamiento actual
+        this.classList.add(isAscending ? 'asc' : 'desc');
+        
+        // Ordenar filas
+        rows.sort((a, b) => {
+          let aValue = a.children[columnIndex].textContent.trim();
+          let bValue = b.children[columnIndex].textContent.trim();
+          
+          // Convertir a números si es posible
+          if (!isNaN(aValue) && !isNaN(bValue)) {
+            aValue = parseFloat(aValue);
+            bValue = parseFloat(bValue);
+          }
+          
+          if (aValue < bValue) return isAscending ? -1 : 1;
+          if (aValue > bValue) return isAscending ? 1 : -1;
+          return 0;
+        });
+        
+        // Reinsertar filas ordenadas
+        rows.forEach(row => tbody.appendChild(row));
+      });
+    });
+
+    // Modal para detalles de alerta
+    document.querySelectorAll('.clickable-row').forEach(row => {
+      row.addEventListener('click', function() {
+        const alertaId = this.getAttribute('data-id');
+        // Aquí podrías hacer una petición AJAX para obtener más detalles
+        // Por ahora, mostraremos información básica
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = `
+          <p><strong>ID:</strong> ${this.cells[0].textContent}</p>
+          <p><strong>Cámara:</strong> ${this.cells[1].textContent}</p>
+          <p><strong>Mensaje:</strong> ${this.cells[2].textContent}</p>
+          <p><strong>Tipo:</strong> ${this.cells[3].textContent}</p>
+          <p><strong>Severidad:</strong> ${this.cells[4].textContent}</p>
+          <p><strong>Fecha/Hora:</strong> ${this.cells[5].textContent}</p>
+        `;
+        
+        const modal = new bootstrap.Modal(document.getElementById('alertaModal'));
+        modal.show();
+      });
+    });
+
+    // Exportar datos
+    document.getElementById('exportBtn').addEventListener('click', function() {
+      // Aquí podrías implementar la lógica para exportar los datos
+      // Por ejemplo, redirigir a una URL que genere un CSV
+      alert('Funcionalidad de exportación en desarrollo');
+    });
   </script>
 </body>
 </html>
