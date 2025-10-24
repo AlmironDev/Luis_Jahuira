@@ -1,6 +1,13 @@
-# Archivos de Python compilados
-*.pyc
+venv/
 __pycache__/
-**/__pycache__/
-
-
+*.pyc
+*.pyo
+*.pyd
+.Python
+.env
+.venv
+monitoring.db
+posture_monitor.log
+.git
+.gitignore
+README.md

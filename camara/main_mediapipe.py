@@ -1,6 +1,13 @@
 import cv2
 import mediapipe as mp
 
+
+# ✅ Puerto RTSP abierto en: 192.168.1.68
+
+
+# ✅ Puerto RTSP abierto en: 192.168.1.67
+
+
 # Configuración simple de MediaPipe
 mp_face_mesh = mp.solutions.face_mesh
 face_mesh = mp_face_mesh.FaceMesh(
@@ -13,7 +20,7 @@ mp_drawing = mp.solutions.drawing_utils
 # Configuración de la cámara
 usuario = "admin"
 clave = "admin123"
-ip = "192.168.18.31"
+ip = "192.168.1.68"
 
 url = f"rtsp://{usuario}:{clave}@{ip}:554/cam/realmonitor?channel=1&subtype=0"
 cap = cv2.VideoCapture(url)
