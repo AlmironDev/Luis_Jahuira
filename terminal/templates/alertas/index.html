@@ -326,6 +326,7 @@
               <th class="sortable" data-sort="id">ID <i class="bi bi-arrow-down-up sort-icon"></i></th>
               <th class="sortable" data-sort="camara">Cámara <i class="bi bi-arrow-down-up sort-icon"></i></th>
               <th>Mensaje</th>
+              <th class="sortable" data-sort="duracion">Tiempo<i class="bi bi-arrow-down-up sort-icon"></i></th>
               <th class="sortable" data-sort="tipo">Tipo <i class="bi bi-arrow-down-up sort-icon"></i></th>
               <th class="sortable" data-sort="severidad">Severidad <i class="bi bi-arrow-down-up sort-icon"></i></th>
               <th class="sortable" data-sort="fecha">Fecha / Hora <i class="bi bi-arrow-down-up sort-icon"></i></th>
@@ -351,6 +352,11 @@
                   </div>
                   {% endif %}
                   <div class="time-ago">{{ alerta.fecha }}</div>
+                </td>
+                <td>
+               
+                    <span class="badge duration-badge ms-1">{{ alerta.duracion_segundos }}s</span>
+              
                 </td>
                 <td><span class="badge  text-dark  badge-{{ alerta.tipo_angulo }} badge-tipo">{{ alerta.tipo_angulo }}</span></td>
                 <td>

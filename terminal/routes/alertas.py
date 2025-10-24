@@ -226,3 +226,6 @@ def configure_alertas_routes(app):
             flash('Error al eliminar la alerta', 'error')
         
         return redirect(url_for('alertas_index'))
+    
+    
+    

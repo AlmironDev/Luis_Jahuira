@@ -264,17 +264,16 @@ class CameraManager:
                 f"⏰ Hora:  {alert['timestamp']}")
 
     def _save_alert_to_db(self, camera_id, alert, level):
-        
-        print("alert",alert)
         """Guarda alerta en base de datos."""
         try:
             conn = get_db_connection()
             conn.execute(
                 '''INSERT INTO alertas 
-                (id_camara, tipo_angulo, valor_angulo, angulo_objetivo, nivel_alerta, duracion_segundos) 
-                VALUES (?, ?, ?, ?, ?, ?)''',
+                (id_camara, tipo_angulo, valor_angulo, angulo_objetivo, nivel_alerta, duracion_segundos, fecha) 
+                VALUES (?, ?, ?, ?, ?, ?, ?)''',
                 (camera_id, alert['angle_type'], alert['angle_value'], 
-                 alert['target_angle'], level, self._calculate_duration(camera_id, alert))
+                alert['target_angle'], level, self._calculate_duration(camera_id, alert),
+                alert['timestamp'])  # ← Usar el timestamp de la alerta
             )
             conn.commit()
             conn.close()
