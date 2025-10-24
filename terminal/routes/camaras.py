@@ -3,7 +3,7 @@ import threading
 import time
 from flask import jsonify, render_template, request, redirect, url_for, flash, abort
 from database import execute_query
-import validators
+ 
 import re
 
 def configure_camaras_routes(app):
@@ -56,9 +56,6 @@ def configure_camaras_routes(app):
                     flash('Nombre y URL son campos obligatorios', 'error')
                     return render_template('camaras/add.html', form_data=request.form)
                 
-                if not validators.url(url):
-                    flash('La URL proporcionada no es válida', 'error')
-                    return render_template('camaras/add.html', form_data=request.form)
 
                 # Verificar si ya existe una cámara con esta URL
                 existing = execute_query('SELECT 1 FROM camaras WHERE url = %s', (url,), fetch=True)
@@ -106,9 +103,6 @@ def configure_camaras_routes(app):
                     flash('Nombre y URL son campos obligatorios', 'error')
                     return render_template('camaras/edit.html', camara=camara)
                 
-                if not validators.url(url):
-                    flash('La URL proporcionada no es válida', 'error')
-                    return render_template('camaras/edit.html', camara=camara)
 
                 # Verificar si existe otra cámara con la misma URL
                 existing = execute_query(
@@ -212,7 +206,7 @@ def configure_camaras_routes(app):
         def generate():
             usuario = "admin"
             clave = "admin123"
-            ips = [f"192.168.18.{i}" for i in range(30, 40)]
+            ips = [f"192.168.1.{i}" for i in range(66, 70)]
 
             for ip in ips:
                 if scan_stop:

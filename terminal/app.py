@@ -14,5 +14,6 @@ camera_manager.start()
 configure_all_routes(app)
 
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    # Especificar host y puerto explícitamente
+    app.run(host="0.0.0.0", port=5000, debug=False)
