@@ -3,7 +3,7 @@ import threading
 import time
 import logging
 from datetime import datetime
-from database import get_db_connection
+from database import execute_query
 from services.video_streamer import video_streamer
 from services.posture_analyzer import posture_analyzer
 
@@ -50,11 +50,15 @@ class CameraManager:
         """Monitorea la base de datos y sincroniza cámaras activas, gestiona alertas"""
         while self.running:
             try:
-                conn = get_db_connection()
-                active_cameras = conn.execute(
-                    "SELECT id, url, nombre FROM camaras WHERE activa = 1"
-                ).fetchall()
-                conn.close()
+                active_cameras = execute_query(
+                    "SELECT id, url, nombre FROM camaras WHERE activa = true",
+                    fetch=True
+                )
+
+                if active_cameras is None:
+                    self.logger.error("No se pudo obtener cámaras activas de la base de datos")
+                    time.sleep(self.refresh_interval)
+                    continue
 
                 active_ids = {c["id"] for c in active_cameras}
 
@@ -266,17 +270,14 @@ class CameraManager:
     def _save_alert_to_db(self, camera_id, alert, level):
         """Guarda alerta en base de datos."""
         try:
-            conn = get_db_connection()
-            conn.execute(
+            execute_query(
                 '''INSERT INTO alertas 
                 (id_camara, tipo_angulo, valor_angulo, angulo_objetivo, nivel_alerta, duracion_segundos, fecha) 
-                VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                VALUES (%s, %s, %s, %s, %s, %s, %s)''',
                 (camera_id, alert['angle_type'], alert['angle_value'], 
                 alert['target_angle'], level, self._calculate_duration(camera_id, alert),
                 alert['timestamp'])  # ← Usar el timestamp de la alerta
             )
-            conn.commit()
-            conn.close()
             self.logger.debug(f"Alerta guardada en BD: {level} - {alert['angle_type']}")
         except Exception as e:
             self.logger.error(f"Error guardando alerta en BD: {e}")

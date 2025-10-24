@@ -1,20 +1,16 @@
 from flask import render_template, request, redirect, url_for, flash, abort
-
-from database import get_db_connection
-
+from database import execute_query
 
 def configure_usuarios_routes(app):
     @app.route('/usuarios')
     def usuarios_index():
         """Lista todos los usuarios registrados"""
-        conn = get_db_connection()
-        usuarios = conn.execute('''
+        usuarios = execute_query('''
             SELECT *
             FROM usuarios
             ORDER BY nombre ASC
-        ''').fetchall()
+        ''', fetch=True)
 
-        conn.close()
         return render_template('usuarios/index.html', usuarios=usuarios)
 
     @app.route('/usuarios/add', methods=['GET', 'POST'])
@@ -25,17 +21,16 @@ def configure_usuarios_routes(app):
             username = request.form.get('username')
             dni = request.form.get('dni')
             role = request.form.get('role', 1)
-            activo = 1 if request.form.get('activo') else 0
+            activo = 'activo' in request.form
 
-            if not nombre or not username  or not dni:
+            if not nombre or not username or not dni:
                 flash('Todos los campos son obligatorios!', 'error')
             else:
-                conn = get_db_connection()
                 try:
-                    conn.execute('''
+                    execute_query('''
                         INSERT INTO usuarios (
                             nombre, username, dni, role, activo
-                        ) VALUES (?, ?, ?, ?, ?)
+                        ) VALUES (%s, %s, %s, %s, %s)
                     ''', (
                         nombre, 
                         username, 
@@ -43,66 +38,61 @@ def configure_usuarios_routes(app):
                         role,
                         activo
                     ))
-                    conn.commit()
                     flash('Usuario creado correctamente!', 'success')
                     return redirect(url_for('usuarios_index'))
-
-                finally:
-                    conn.close()
+                except Exception as e:
+                    app.logger.error(f"Error al crear usuario: {str(e)}")
+                    flash('Error al crear el usuario. Puede que el username o DNI ya existan.', 'error')
 
         return render_template('usuarios/add.html')
 
     @app.route('/usuarios/edit/<int:id>', methods=['GET', 'POST'])
     def usuarios_edit(id):
         """Edita un usuario existente"""
-        conn = get_db_connection()
-        usuario = conn.execute('SELECT * FROM usuarios WHERE id = ?', (id,)).fetchone()
-        conn.close()
-
-        if usuario is None:
+        usuario_result = execute_query('SELECT * FROM usuarios WHERE id = %s', (id,), fetch=True)
+        
+        if not usuario_result:
             abort(404)
+
+        usuario = usuario_result[0]
 
         if request.method == 'POST':
             nombre = request.form.get('nombre')
             username = request.form.get('username')
             dni = request.form.get('dni')
             role = request.form.get('role', 1)
-            activo = 1 if request.form.get('activo') else 0
+            activo = 'activo' in request.form
 
             if not nombre or not username or not dni:
                 flash('Los campos básicos son obligatorios!', 'error')
             else:
-                conn = get_db_connection()
                 try:
-                   
-                    conn.execute('''
+                    execute_query('''
                         UPDATE usuarios SET
-                            nombre = ?, username = ?, dni = ?,
-                            role = ?, activo = ?
-                        WHERE id = ?
+                            nombre = %s, username = %s, dni = %s,
+                            role = %s, activo = %s
+                        WHERE id = %s
                     ''', (nombre, username, dni, role, activo, id))
                     
-                    conn.commit()
                     flash('Usuario actualizado correctamente!', 'success')
                     return redirect(url_for('usuarios_index'))
-
-                finally:
-                    conn.close()
+                except Exception as e:
+                    app.logger.error(f"Error al actualizar usuario: {str(e)}")
+                    flash('Error al actualizar el usuario. Puede que el username o DNI ya existan.', 'error')
 
         return render_template('usuarios/edit.html', usuario=usuario)
 
     @app.route('/usuarios/toggle/<int:id>')
     def usuarios_toggle(id):
         """Activa/desactiva un usuario"""
-        conn = get_db_connection()
-        usuario = conn.execute('SELECT activo FROM usuarios WHERE id = ?', (id,)).fetchone()
+        usuario_result = execute_query('SELECT activo FROM usuarios WHERE id = %s', (id,), fetch=True)
         
-        if usuario:
-            new_status = 0 if usuario['activo'] else 1
-            conn.execute('UPDATE usuarios SET activo = ? WHERE id = ?', (new_status, id))
-            conn.commit()
+        if usuario_result:
+            usuario = usuario_result[0]
+            new_status = not usuario['activo']
+            execute_query('UPDATE usuarios SET activo = %s WHERE id = %s', (new_status, id))
+            
             estado = "activado" if new_status else "desactivado"
             flash(f'Usuario {estado} correctamente', 'success')
         
-        conn.close()
         return redirect(url_for('usuarios_index'))

@@ -38,7 +38,6 @@
       border-left: 5px solid var(--warning-border); 
     }
 
-
     .clickable-row { 
       cursor: pointer; 
       transition: all 0.15s ease; 
@@ -156,6 +155,40 @@
       transform: translateY(-3px);
     }
     
+    .angle-badge {
+      font-family: monospace;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .target-badge {
+      font-family: monospace;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+    
+    .camera-badge {
+      background-color: #17a2b8;
+    }
+    
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    
+    .spinner {
+      width: 3rem;
+      height: 3rem;
+    }
+    
     @media (max-width: 768px) {
       .filter-section .col-md-3,
       .filter-section .col-md-2 {
@@ -169,6 +202,10 @@
       .badge {
         font-size: 0.7rem;
       }
+      
+      .stats-card .card-body {
+        padding: 1rem;
+      }
     }
   </style>
 </head>
@@ -179,9 +216,9 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h1 class="h3 mb-1 fw-bold page-title">
-          <i class="bi bi-activity text-primary me-2"></i>Alertas del Sistema
+          <i class="bi bi-activity text-primary me-2"></i>Alertas de Postura
         </h1>
-        <p class="text-muted mb-0">Monitoreo y gestión de alertas automáticas</p>
+        <p class="text-muted mb-0">Monitoreo y gestión de alertas automáticas de postura corporal</p>
       </div>
       <div>
         <a href="{{ url_for('index') }}" class="btn btn-outline-secondary me-2">
@@ -245,11 +282,11 @@
           <div class="card-body">
             <div class="d-flex justify-content-between">
               <div>
-                <h6 class="card-title text-muted">Cámaras Activas</h6>
-                <h3 class="text-success">{{ camaras|length }}</h3>
+                <h6 class="card-title text-muted">Tipos de Ángulo</h6>
+                <h3 class="text-success">{{ tipos_angulo|length }}</h3>
               </div>
               <div class="align-self-center">
-                <i class="bi bi-camera-video text-success" style="font-size: 1.5rem;"></i>
+                <i class="bi bi-gear text-success" style="font-size: 1.5rem;"></i>
               </div>
             </div>
           </div>
@@ -270,26 +307,26 @@
           </select>
         </div>
 
-        <div class="col-md-2">
-          <label for="tipo" class="form-label fw-semibold">Tipo</label>
-          <select class="form-select" name="tipo" id="tipo">
-            <option value="">Todos</option>
-            <option value="POSTURE" {% if filtros.tipo == 'POSTURE' %}selected{% endif %}>Postura</option>
-            <option value="HANDS" {% if filtros.tipo == 'HANDS' %}selected{% endif %}>Manos</option>
-            <option value="MOVEMENT" {% if filtros.tipo == 'MOVEMENT' %}selected{% endif %}>Movimiento</option>
-          </select>
-        </div>
-
-        <div class="col-md-2">
-          <label for="severidad" class="form-label fw-semibold">Severidad</label>
-          <select class="form-select" name="severidad" id="severidad">
-            <option value="">Todas</option>
-            <option value="CRITICAL" {% if filtros.severidad == 'CRITICAL' %}selected{% endif %}>Crítica</option>
-            <option value="WARNING" {% if filtros.severidad == 'WARNING' %}selected{% endif %}>Advertencia</option>
-          </select>
-        </div>
-
         <div class="col-md-3">
+          <label for="tipo_angulo" class="form-label fw-semibold">Tipo de Ángulo</label>
+          <select class="form-select" name="tipo_angulo" id="tipo_angulo">
+            <option value="">Todos los tipos</option>
+            {% for tipo in tipos_angulo %}
+              <option value="{{ tipo }}" {% if filtros.tipo_angulo == tipo %}selected{% endif %}>{{ tipo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <label for="nivel_alerta" class="form-label fw-semibold">Nivel</label>
+          <select class="form-select" name="nivel_alerta" id="nivel_alerta">
+            <option value="">Todos</option>
+            <option value="CRITICAL" {% if filtros.nivel_alerta == 'CRITICAL' %}selected{% endif %}>Crítica</option>
+            <option value="WARNING" {% if filtros.nivel_alerta == 'WARNING' %}selected{% endif %}>Advertencia</option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
           <label for="fecha" class="form-label fw-semibold">Fecha</label>
           <input type="date" class="form-control" name="fecha" value="{{ filtros.fecha or '' }}">
         </div>
@@ -298,7 +335,7 @@
           <button type="submit" class="btn btn-primary w-100">
             <i class="bi bi-funnel"></i> Filtrar
           </button>
-          <a href="?" class="btn btn-outline-secondary w-100">
+          <a href="?" class="btn btn-outline-secondary w-100" title="Limpiar filtros">
             <i class="bi bi-arrow-counterclockwise"></i>
           </a>
         </div>
@@ -325,54 +362,76 @@
             <tr>
               <th class="sortable" data-sort="id">ID <i class="bi bi-arrow-down-up sort-icon"></i></th>
               <th class="sortable" data-sort="camara">Cámara <i class="bi bi-arrow-down-up sort-icon"></i></th>
-              <th>Mensaje</th>
-              <th class="sortable" data-sort="duracion">Tiempo<i class="bi bi-arrow-down-up sort-icon"></i></th>
+              <th>Información de Postura</th>
+              <th class="sortable" data-sort="duracion">Duración <i class="bi bi-arrow-down-up sort-icon"></i></th>
               <th class="sortable" data-sort="tipo">Tipo <i class="bi bi-arrow-down-up sort-icon"></i></th>
-              <th class="sortable" data-sort="severidad">Severidad <i class="bi bi-arrow-down-up sort-icon"></i></th>
+              <th class="sortable" data-sort="nivel">Nivel <i class="bi bi-arrow-down-up sort-icon"></i></th>
               <th class="sortable" data-sort="fecha">Fecha / Hora <i class="bi bi-arrow-down-up sort-icon"></i></th>
             </tr>
           </thead>
           <tbody>
             {% for alerta in alertas %}
-              <tr class="clickable-row severity-{{ alerta.severidad }}" data-id="{{ alerta.id }}">
-                <td><strong>{{ alerta.id }}</strong></td>
+              <tr class="clickable-row severity-{{ alerta.nivel_alerta }}" data-id="{{ alerta.id }}" data-alerta='{{ alerta | tojson | safe }}'>
+                <td><strong>#{{ alerta.id }}</strong></td>
                 <td>
-                  <span class="fw-semibold">{{ alerta.nombre_camara }}</span><br>
-                  <small class="text-muted">ID: {{ alerta.id_camara }}</small>
-                </td>
-                <td>
-                  {{ alerta.mensaje }}
-                  {% if alerta.tipo_angulo %}
-                  <div class="angle-info mt-1">
-                    <span class="badge bg-light text-dark">{{ alerta.tipo_angulo }}</span>
-                    <span>Ángulo: {{ alerta.valor_angulo }}° / Objetivo: {{ alerta.angulo_objetivo }}°</span>
-                    {% if alerta.duracion_segundos %}
-                    <span class="badge duration-badge ms-1">{{ alerta.duracion_segundos }}s</span>
-                    {% endif %}
+                  <div class="d-flex align-items-center">
+                    <i class="bi bi-camera-video text-muted me-2"></i>
+                    <div>
+                      <span class="fw-semibold">{{ alerta.nombre_camara or 'Cámara ' + alerta.id_camara|string }}</span>
+                      {% if alerta.ubicacion %}
+                      <br><small class="text-muted">{{ alerta.ubicacion }}</small>
+                      {% endif %}
+                    </div>
                   </div>
-                  {% endif %}
-                  <div class="time-ago">{{ alerta.fecha }}</div>
                 </td>
                 <td>
-               
-                    <span class="badge duration-badge ms-1">{{ alerta.duracion_segundos }}s</span>
-              
+                  <div class="angle-info">
+                    <div class="mb-1">
+                      <span class="badge angle-badge me-1">{{ alerta.valor_angulo }}°</span>
+                      <span class="badge target-badge">{{ alerta.angulo_objetivo }}° objetivo</span>
+                    </div>
+                    <div class="fw-semibold text-capitalize">
+                      {{ alerta.tipo_angulo | replace('_', ' ') }}
+                    </div>
+                    <div class="time-ago mt-1" data-timestamp="{{ alerta.fecha_formateada }}">
+                      {{ alerta.fecha_formateada }}
+                    </div>
+                  </div>
                 </td>
-                <td><span class="badge  text-dark  badge-{{ alerta.tipo_angulo }} badge-tipo">{{ alerta.tipo_angulo }}</span></td>
+                <td>
+                  {% if alerta.duracion_segundos %}
+                    <span class="badge duration-badge">{{ alerta.duracion_segundos }} seg</span>
+                  {% else %}
+                    <span class="badge bg-secondary">N/A</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge bg-light text-dark text-capitalize badge-tipo">
+                    {{ alerta.tipo_angulo | replace('_', ' ') }}
+                  </span>
+                </td>
                 <td>
                   {% if alerta.nivel_alerta == 'CRITICAL' %}
-                    <span class="badge bg-danger">{{ alerta.nivel_alerta }}</span>
+                    <span class="badge bg-danger">
+                      <i class="bi bi-exclamation-triangle-fill me-1"></i>{{ alerta.nivel_alerta }}
+                    </span>
                   {% elif alerta.nivel_alerta == 'WARNING' %}
-                    <span class="badge bg-warning text-dark">{{ alerta.nivel_alerta }}</span>
+                    <span class="badge bg-warning text-dark">
+                      <i class="bi bi-exclamation-circle-fill me-1"></i>{{ alerta.nivel_alerta }}
+                    </span>
                   {% else %}
                     <span class="badge bg-success">{{ alerta.nivel_alerta }}</span>
                   {% endif %}
                 </td>
-                <td>{{ alerta.fecha[:10].split('-')[2] }}/{{ alerta.fecha[:10].split('-')[1] }}/{{ alerta.fecha[:10].split('-')[0] }} {{ alerta.fecha[11:19] }}</td>
+                <td>
+                  <div class="text-nowrap">
+                    {{ alerta.fecha_formateada }}
+                  </div>
+                </td>
               </tr>
             {% else %}
               <tr>
-                <td colspan="6" class="table-empty">
+                <td colspan="7" class="table-empty">
                   <i class="bi bi-emoji-smile"></i>
                   <h5 class="mt-2 fw-semibold">No hay alertas registradas</h5>
                   <p class="text-muted mb-0">Prueba ajustando los filtros o revisa más tarde</p>
@@ -412,10 +471,12 @@
 
   <!-- Modal para detalles de alerta -->
   <div class="modal fade" id="alertaModal" tabindex="-1" aria-labelledby="alertaModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title" id="alertaModalLabel">Detalles de la Alerta</h5>
+          <h5 class="modal-title" id="alertaModalLabel">
+            <i class="bi bi-activity me-2"></i>Detalles de la Alerta
+          </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body" id="modalBody">
@@ -423,6 +484,9 @@
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+          <button type="button" class="btn btn-danger" id="deleteAlertaBtn">
+            <i class="bi bi-trash"></i> Eliminar Alerta
+          </button>
         </div>
       </div>
     </div>
@@ -438,26 +502,30 @@
 
     // Función para calcular tiempo transcurrido
     function timeAgo(dateString) {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now - date;
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHrs = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHrs / 24);
-      
-      if (diffMins < 1) return 'Hace un momento';
-      if (diffMins < 60) return `Hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
-      if (diffHrs < 24) return `Hace ${diffHrs} hora${diffHrs > 1 ? 's' : ''}`;
-      return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+      try {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHrs = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHrs / 24);
+        
+        if (diffMins < 1) return 'Hace un momento';
+        if (diffMins < 60) return `Hace ${diffMins} minuto${diffMins > 1 ? 's' : ''}`;
+        if (diffHrs < 24) return `Hace ${diffHrs} hora${diffHrs > 1 ? 's' : ''}`;
+        return `Hace ${diffDays} día${diffDays > 1 ? 's' : ''}`;
+      } catch (e) {
+        return dateString;
+      }
     }
 
     // Actualizar tiempos transcurridos
     document.addEventListener('DOMContentLoaded', function() {
       const timeElements = document.querySelectorAll('.time-ago');
       timeElements.forEach(el => {
-        const originalDate = el.textContent.trim();
-        if (originalDate) {
-          el.textContent = timeAgo(originalDate);
+        const timestamp = el.getAttribute('data-timestamp');
+        if (timestamp) {
+          el.textContent = timeAgo(timestamp);
         }
       });
     });
@@ -504,18 +572,78 @@
     // Modal para detalles de alerta
     document.querySelectorAll('.clickable-row').forEach(row => {
       row.addEventListener('click', function() {
-        const alertaId = this.getAttribute('data-id');
-        // Aquí podrías hacer una petición AJAX para obtener más detalles
-        // Por ahora, mostraremos información básica
+        const alertaData = JSON.parse(this.getAttribute('data-alerta'));
         const modalBody = document.getElementById('modalBody');
+        
+        const tipoAnguloMap = {
+          'rodilla_izq': 'Rodilla Izquierda',
+          'rodilla_der': 'Rodilla Derecha',
+          'cadera_columna_izq': 'Cadera-Columna Izquierda',
+          'cadera_columna_der': 'Cadera-Columna Derecha',
+          'codo_izq': 'Codo Izquierdo',
+          'codo_der': 'Codo Derecho',
+          'cuello_izq': 'Cuello Izquierdo',
+          'cuello_der': 'Cuello Derecho'
+        };
+        
+        const tipoDisplay = tipoAnguloMap[alertaData.tipo_angulo] || alertaData.tipo_angulo;
+        
         modalBody.innerHTML = `
-          <p><strong>ID:</strong> ${this.cells[0].textContent}</p>
-          <p><strong>Cámara:</strong> ${this.cells[1].textContent}</p>
-          <p><strong>Mensaje:</strong> ${this.cells[2].textContent}</p>
-          <p><strong>Tipo:</strong> ${this.cells[3].textContent}</p>
-          <p><strong>Severidad:</strong> ${this.cells[4].textContent}</p>
-          <p><strong>Fecha/Hora:</strong> ${this.cells[5].textContent}</p>
+          <div class="row">
+            <div class="col-md-6">
+              <h6 class="fw-semibold">Información General</h6>
+              <table class="table table-sm">
+                <tr><td><strong>ID:</strong></td><td>#${alertaData.id}</td></tr>
+                <tr><td><strong>Cámara:</strong></td><td>${alertaData.nombre_camara || 'N/A'}</td></tr>
+                <tr><td><strong>Ubicación:</strong></td><td>${alertaData.ubicacion || 'N/A'}</td></tr>
+                <tr><td><strong>Nivel:</strong></td><td>
+                  ${alertaData.nivel_alerta === 'CRITICAL' ? 
+                    '<span class="badge bg-danger">CRÍTICA</span>' : 
+                    '<span class="badge bg-warning text-dark">ADVERTENCIA</span>'}
+                </td></tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <h6 class="fw-semibold">Datos de Postura</h6>
+              <table class="table table-sm">
+                <tr><td><strong>Tipo:</strong></td><td class="text-capitalize">${tipoDisplay}</td></tr>
+                <tr><td><strong>Ángulo Actual:</strong></td><td><span class="badge angle-badge">${alertaData.valor_angulo}°</span></td></tr>
+                <tr><td><strong>Ángulo Objetivo:</strong></td><td><span class="badge target-badge">${alertaData.angulo_objetivo}°</span></td></tr>
+                <tr><td><strong>Diferencia:</strong></td><td><span class="badge ${Math.abs(alertaData.valor_angulo - alertaData.angulo_objetivo) > 30 ? 'bg-danger' : 'bg-warning'}">
+                  ${Math.abs(alertaData.valor_angulo - alertaData.angulo_objetivo).toFixed(1)}°
+                </span></td></tr>
+                ${alertaData.duracion_segundos ? `
+                <tr><td><strong>Duración:</strong></td><td><span class="badge duration-badge">${alertaData.duracion_segundos} segundos</span></td></tr>
+                ` : ''}
+              </table>
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-12">
+              <h6 class="fw-semibold">Fecha y Hora</h6>
+              <p class="mb-0"><i class="bi bi-clock me-2"></i>${alertaData.fecha_formateada}</p>
+            </div>
+          </div>
         `;
+        
+        // Configurar botón de eliminar
+        const deleteBtn = document.getElementById('deleteAlertaBtn');
+        deleteBtn.onclick = function() {
+          if (confirm('¿Estás seguro de que deseas eliminar esta alerta?')) {
+            fetch(`/alertas/${alertaData.id}/eliminar`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              }
+            }).then(response => {
+              if (response.ok) {
+                location.reload();
+              } else {
+                alert('Error al eliminar la alerta');
+              }
+            });
+          }
+        };
         
         const modal = new bootstrap.Modal(document.getElementById('alertaModal'));
         modal.show();
@@ -524,10 +652,27 @@
 
     // Exportar datos
     document.getElementById('exportBtn').addEventListener('click', function() {
-      // Aquí podrías implementar la lógica para exportar los datos
-      // Por ejemplo, redirigir a una URL que genere un CSV
-      alert('Funcionalidad de exportación en desarrollo');
+      this.innerHTML = '<i class="bi bi-hourglass-split"></i> Exportando...';
+      this.disabled = true;
+      
+      // Simular exportación
+      setTimeout(() => {
+        alert('Funcionalidad de exportación en desarrollo. Se implementará pronto.');
+        this.innerHTML = '<i class="bi bi-download"></i> Exportar';
+        this.disabled = false;
+      }, 1000);
     });
+
+    // Auto-refresh cada 30 segundos
+    setInterval(() => {
+      const timeElements = document.querySelectorAll('.time-ago');
+      timeElements.forEach(el => {
+        const timestamp = el.getAttribute('data-timestamp');
+        if (timestamp) {
+          el.textContent = timeAgo(timestamp);
+        }
+      });
+    }, 30000);
   </script>
 </body>
 </html>

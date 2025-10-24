@@ -1,7 +1,7 @@
 import os
-from flask import render_template, request, redirect, url_for, flash
+from flask import render_template, request, redirect, url_for, flash, abort
 from werkzeug.utils import secure_filename
-from database import get_db_connection
+from database import execute_query
 from datetime import datetime, time
 
 def configure_pausas_activas_routes(app):
@@ -24,19 +24,15 @@ def configure_pausas_activas_routes(app):
     def pausas_activas_index():
         """Muestra el listado de pausas activas programadas"""
         try:
-            conn = get_db_connection()
-            
             # Obtener pausas con información de usuario
-            pausas = conn.execute('''
+            pausas = execute_query('''
                 SELECT pa.id, pa.mensaje, pa.imagen, pa.hora_pausa, pa.dias_semana, pa.activa,
-                       strftime('%H:%M', pa.hora_pausa) as hora_formateada,
+                       TO_CHAR(pa.hora_pausa, 'HH24:MI') as hora_formateada,
                        u.nombre as usuario_nombre
                 FROM pausas_activas pa
                 JOIN usuarios u ON pa.id_usuario = u.id
                 ORDER BY pa.hora_pausa
-            ''').fetchall()
-            
-            conn.close()
+            ''', fetch=True)
             
             return render_template('pausas_activas/index.html', pausas=pausas)
             
@@ -48,9 +44,10 @@ def configure_pausas_activas_routes(app):
     @app.route('/pausas_activas/add', methods=['GET', 'POST'])
     def pausas_activas_add():
         """Agrega una nueva pausa activa programada"""
-        conn = get_db_connection()
-        
         try:
+            # Obtener lista de usuarios
+            usuarios = execute_query('SELECT id, nombre FROM usuarios', fetch=True)
+            
             if request.method == 'POST':
                 mensaje = request.form.get('mensaje', '').strip()
                 hora_pausa = request.form.get('hora_pausa')
@@ -76,52 +73,47 @@ def configure_pausas_activas_routes(app):
                         datetime.strptime(hora_pausa, '%H:%M')
                     except ValueError:
                         flash('Formato de hora inválido. Use HH:MM', 'error')
-                        return redirect(url_for('pausas_activas_add'))
+                        return render_template('pausas_activas/add.html', usuarios=usuarios)
 
-                    conn.execute('''
+                    execute_query('''
                         INSERT INTO pausas_activas 
                         (mensaje, imagen, hora_pausa, dias_semana, id_usuario) 
-                        VALUES (?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s, %s)
                     ''', (mensaje, imagen, hora_pausa, dias_semana, id_usuario))
                     
-                    conn.commit()
                     flash('Pausa activa programada correctamente', 'success')
                     return redirect(url_for('pausas_activas_index'))
 
-            # Obtener lista de usuarios
-            usuarios = conn.execute('SELECT id, nombre FROM usuarios').fetchall()
-            
             return render_template('pausas_activas/add.html', usuarios=usuarios)
                                 
         except Exception as e:
             app.logger.error(f"Error al agregar pausa activa: {str(e)}")
             flash('Error al programar la pausa activa', 'error')
             return render_template('pausas_activas/add.html', usuarios=usuarios)
-        finally:
-            conn.close()
 
     @app.route('/pausas_activas/edit/<int:id>', methods=['GET', 'POST'])
     def pausas_activas_edit(id):
         """Edita una pausa activa existente"""
-        conn = get_db_connection()
-        
         try:
-            pausa = conn.execute('''
+            pausa_result = execute_query('''
                 SELECT pa.*, u.nombre as usuario_nombre
                 FROM pausas_activas pa
                 JOIN usuarios u ON pa.id_usuario = u.id
-                WHERE pa.id = ?
-            ''', (id,)).fetchone()
+                WHERE pa.id = %s
+            ''', (id,), fetch=True)
 
-            if pausa is None:
-                print(404)
+            if not pausa_result:
+                abort(404)
+
+            pausa = pausa_result[0]
+            usuarios = execute_query('SELECT id, nombre FROM usuarios', fetch=True)
 
             if request.method == 'POST':
                 mensaje = request.form.get('mensaje', '').strip()
                 hora_pausa = request.form.get('hora_pausa')
-                dias_semana = ','.join(request.form.getlist('dias_semana'))  # Obtener días seleccionados
+                dias_semana = ','.join(request.form.getlist('dias_semana'))
                 id_usuario = request.form.get('id_usuario')
-                activa = 1 if request.form.get('activa') else 0
+                activa = 'activa' in request.form
                 eliminar_imagen = request.form.get('eliminar_imagen')
                 imagen = pausa['imagen']
 
@@ -153,19 +145,16 @@ def configure_pausas_activas_routes(app):
                         flash('Formato de hora inválido. Use HH:MM', 'error')
                         return redirect(url_for('pausas_activas_edit', id=id))
 
-                    conn.execute('''
+                    execute_query('''
                         UPDATE pausas_activas SET
-                            mensaje = ?, imagen = ?, hora_pausa = ?, 
-                            dias_semana = ?, id_usuario = ?, activa = ?
-                        WHERE id = ?
+                            mensaje = %s, imagen = %s, hora_pausa = %s, 
+                            dias_semana = %s, id_usuario = %s, activa = %s
+                        WHERE id = %s
                     ''', (mensaje, imagen, hora_pausa, dias_semana, id_usuario, activa, id))
                     
-                    conn.commit()
                     flash('Pausa activa actualizada correctamente', 'success')
                     return redirect(url_for('pausas_activas_index'))
 
-            usuarios = conn.execute('SELECT id, nombre FROM usuarios').fetchall()
-            
             # Convertir días seleccionados a lista para los checkboxes
             dias_seleccionados = pausa['dias_semana'].split(',') if pausa['dias_semana'] else []
             
@@ -178,31 +167,27 @@ def configure_pausas_activas_routes(app):
             app.logger.error(f"Error al editar pausa activa {id}: {str(e)}")
             flash('Error al actualizar la pausa activa', 'error')
             return redirect(url_for('pausas_activas_index'))
-        finally:
-            conn.close()
 
     @app.route('/pausas_activas/delete/<int:id>', methods=['POST'])
     def pausas_activas_delete(id):
         """Elimina una pausa activa programada"""
         if request.method != 'POST':
-            print(405)
+            abort(405)
             
         try:
-            conn = get_db_connection()
-            
             # Obtener imagen asociada para eliminarla
-            pausa = conn.execute('SELECT imagen FROM pausas_activas WHERE id = ?', (id,)).fetchone()
+            pausa_result = execute_query('SELECT imagen FROM pausas_activas WHERE id = %s', (id,), fetch=True)
             
-            if pausa and pausa['imagen'] and os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], pausa['imagen'])):
-                os.remove(os.path.join(app.config['UPLOAD_FOLDER'], pausa['imagen']))
+            if pausa_result and pausa_result[0]['imagen']:
+                imagen = pausa_result[0]['imagen']
+                if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], imagen)):
+                    os.remove(os.path.join(app.config['UPLOAD_FOLDER'], imagen))
             
-            conn.execute('DELETE FROM pausas_activas WHERE id = ?', (id,))
-            conn.commit()
+            execute_query('DELETE FROM pausas_activas WHERE id = %s', (id,))
             flash('Pausa activa eliminada correctamente', 'success')
+            
         except Exception as e:
             app.logger.error(f"Error al eliminar pausa activa {id}: {str(e)}")
             flash('Error al eliminar la pausa activa', 'error')
-        finally:
-            conn.close()
             
         return redirect(url_for('pausas_activas_index'))

@@ -1,6 +1,6 @@
 from flask import render_template, request, redirect, url_for, flash, abort, jsonify, Response
 import numpy as np
-from database import get_db_connection
+from database import execute_query
 from services.video_streamer import VideoStreamer
 import time
 from datetime import datetime
@@ -8,18 +8,17 @@ from datetime import datetime
 from services.camera_manager import camera_manager
 video_streamer = VideoStreamer()
 import cv2
+
 def configure_videos_routes(app):
     @app.route('/video')
     def video_index():
         """Muestra todas las cámaras en modo visualización"""
         try:
-            conn = get_db_connection()
-            camaras = conn.execute('''
+            camaras = execute_query('''
                 SELECT id, nombre, url 
                 FROM camaras
                 ORDER BY nombre
-            ''').fetchall()
-            conn.close()
+            ''', fetch=True)
             
             return render_template('video/index.html', camaras=camaras)
             
@@ -28,25 +27,23 @@ def configure_videos_routes(app):
             flash('Error al cargar las cámaras en modo video', 'error')
             return redirect(url_for('index'))
 
-
     @app.route('/video/config/<int:camera_id>')
     def video_config(camera_id):
         """Muestra la configuración de una cámara específica."""
         try:
-            conn = get_db_connection()
-            camara = conn.execute('''
+            camara_result = execute_query('''
                 SELECT id, nombre, url,
                        muslo_rodilla_pie, espalda_cadera_muslo,
                        hombros_brazos, espalda_cuello_cabeza,
                        manos_muneca
                 FROM camaras
-                WHERE id = ?
-            ''', (camera_id,)).fetchone()
-            conn.close()
+                WHERE id = %s
+            ''', (camera_id,), fetch=True)
 
-            if not camara:
+            if not camara_result:
                 abort(404)
 
+            camara = camara_result[0]
             camara_dict = dict(camara)
             camara_dict.setdefault('activa', True)
             camara_dict.setdefault('max_neck_angle', 45)
@@ -107,15 +104,14 @@ def configure_videos_routes(app):
             })
             
             # Actualizar la base de datos
-            conn = get_db_connection()
-            conn.execute('''
+            execute_query('''
                 UPDATE camaras SET
-                    muslo_rodilla_pie = ?,
-                    espalda_cadera_muslo = ?,
-                    hombros_brazos = ?,
-                    espalda_cuello_cabeza = ?,
-                    manos_muneca = ?
-                WHERE id = ?
+                    muslo_rodilla_pie = %s,
+                    espalda_cadera_muslo = %s,
+                    hombros_brazos = %s,
+                    espalda_cuello_cabeza = %s,
+                    manos_muneca = %s
+                WHERE id = %s
             ''', (
                 data['muslo_rodilla_pie'],
                 data['espalda_cadera_muslo'],
@@ -124,8 +120,6 @@ def configure_videos_routes(app):
                 data['manos_muneca'],
                 camera_id
             ))
-            conn.commit()
-            conn.close()
             
             return jsonify({'success': True})
             

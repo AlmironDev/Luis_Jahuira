@@ -1,34 +1,78 @@
-import sqlite3
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from datetime import datetime
+import os
 
 def get_db_connection():
-    """Establece conexión con la base de datos SQLite"""
-    conn = sqlite3.connect('monitoring.db') 
-    conn.row_factory = sqlite3.Row
-    return conn
+    """Establece conexión con la base de datos PostgreSQL en Neon"""
+    try:
+        conn = psycopg2.connect(
+            'postgresql://neondb_owner:npg_U1WXNbyich6g@ep-sweet-frost-aggb3hti-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+        )
+        return conn
+    except psycopg2.Error as e:
+        print(f"Error al conectar a la base de datos: {e}")
+        return None
+
+def execute_query(query, params=None, fetch=False):
+    """Ejecuta una consulta y retorna los resultados"""
+    conn = get_db_connection()
+    if conn is None:
+        return None
+        
+    try:
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+            
+        if fetch:
+            if query.strip().upper().startswith('SELECT'):
+                result = cursor.fetchall()
+            else:
+                result = None
+        else:
+            conn.commit()
+            result = None
+            
+        return result
+    except psycopg2.Error as e:
+        print(f"Error en la consulta: {e}")
+        conn.rollback()
+        return None
+    finally:
+        cursor.close()
+        conn.close()
 
 def init_db():
     """Inicializa la base de datos con las tablas necesarias"""
     conn = get_db_connection()
     
+    if conn is None:
+        print("No se pudo establecer conexión con la base de datos")
+        return
+    
     try:
+        cursor = conn.cursor()
+        
         # Tabla de usuarios
-        conn.execute('''
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS usuarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 nombre TEXT NOT NULL,
                 username TEXT UNIQUE NOT NULL,
                 role INTEGER NOT NULL DEFAULT 1, 
                 dni TEXT UNIQUE NOT NULL,  
                 fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                activo BOOLEAN DEFAULT 1
+                activo BOOLEAN DEFAULT true
             )
         ''')
 
         # Tabla de cámaras
-        conn.execute('''
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS camaras (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 nombre TEXT NOT NULL,
                 url TEXT UNIQUE NOT NULL,
                 descripcion TEXT,
@@ -38,21 +82,20 @@ def init_db():
                 espalda_cuello_cabeza INTEGER NOT NULL DEFAULT 90,  
                 manos_muneca INTEGER NOT NULL DEFAULT 90,   
                 ubicacion TEXT,
-                activa BOOLEAN DEFAULT 1,
-                fecha_instalacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (id) REFERENCES notificaciones(id_camara)
+                activa BOOLEAN DEFAULT true,
+                fecha_instalacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
         # Tabla de notificaciones
-        conn.execute('''
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS notificaciones (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 id_usuario INTEGER NOT NULL,
                 id_camara INTEGER NOT NULL,
                 mensaje TEXT NOT NULL,
-                tipo TEXT NOT NULL,  -- 'postura', 'movimiento', 'conexion'
-                leida BOOLEAN DEFAULT 0,
+                tipo TEXT NOT NULL,
+                leida BOOLEAN DEFAULT false,
                 fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (id_usuario) REFERENCES usuarios(id),
                 FOREIGN KEY (id_camara) REFERENCES camaras(id)
@@ -60,60 +103,92 @@ def init_db():
         ''')
 
         # Tabla de configuración del sistema
-        conn.execute('''
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS configuracion (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 parametro TEXT UNIQUE NOT NULL,
                 valor TEXT NOT NULL,
                 descripcion TEXT
             )
         ''')
         
-        # En tu archivo de base de datos o donde creas las tablas
-        conn.execute('''
+        # Tabla de alertas
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS alertas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 id_camara INTEGER NOT NULL,
-                tipo_angulo TEXT NOT NULL,           -- Ej: 'rodilla_izq', 'codo_der', etc.
-                valor_angulo REAL NOT NULL,          -- Valor numérico del ángulo detectado
-                angulo_objetivo REAL NOT NULL,       -- Valor objetivo (90° o 180°)
-                nivel_alerta TEXT NOT NULL,          -- 'WARNING' o 'CRITICAL'
-                duracion_segundos INTEGER,           -- Duración en segundos de la mala postura
+                tipo_angulo TEXT NOT NULL,
+                valor_angulo REAL NOT NULL,
+                angulo_objetivo REAL NOT NULL,
+                nivel_alerta TEXT NOT NULL,
+                duracion_segundos INTEGER,
                 fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (id_camara) REFERENCES camaras(id)
             )
         ''')
 
-        # También crear índices para mejor performance
-        conn.execute('CREATE INDEX IF NOT EXISTS idx_alertas_fecha ON alertas(fecha)')
-        conn.execute('CREATE INDEX IF NOT EXISTS idx_alertas_nivel ON alertas(nivel_alerta)')
-        conn.execute('CREATE INDEX IF NOT EXISTS idx_alertas_camara ON alertas(id_camara)')
-                
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS pausas_activas(
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+        # Tabla de pausas activas
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS pausas_activas (
+                id SERIAL PRIMARY KEY,
                 id_usuario INTEGER NOT NULL,
                 mensaje TEXT,
                 imagen TEXT,
-                hora_pausa TIMESTAMP,  -- Almacenar como texto en formato HH:MM o como TIMESTAMP
-                dias_semana TEXT,  -- Para especificar días de la semana (ej. "Lunes,Miércoles,Viernes")
-                activa BOOLEAN DEFAULT 1,
+                hora_pausa TIME,
+                dias_semana TEXT,
+                activa BOOLEAN DEFAULT true,
                 FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
             )
         ''')
 
-        
-        # Índices para mejorar el rendimiento de las consultas
-        conn.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_usuario ON notificaciones(id_usuario)')
-        conn.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_camara ON notificaciones(id_camara)')
-        conn.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_fecha ON notificaciones(fecha)')
-
-
+        # Crear índices
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_alertas_fecha ON alertas(fecha)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_alertas_nivel ON alertas(nivel_alerta)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_alertas_camara ON alertas(id_camara)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_usuario ON notificaciones(id_usuario)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_camara ON notificaciones(id_camara)')
+        cursor.execute('CREATE INDEX IF NOT EXISTS idx_notificaciones_fecha ON notificaciones(fecha)')
 
         conn.commit()
+        print("Base de datos inicializada correctamente")
         
-    except sqlite3.Error as e:
+    except psycopg2.Error as e:
         print(f"Error al inicializar la base de datos: {e}")
         conn.rollback()
     finally:
+        cursor.close()
         conn.close()
+
+# Función adicional para consultas simples (sin RealDictCursor)
+def execute_simple_query(query, params=None):
+    """Ejecuta una consulta simple y retorna los resultados (sin RealDictCursor)"""
+    conn = get_db_connection()
+    if conn is None:
+        return None
+        
+    try:
+        cursor = conn.cursor()
+        if params:
+            cursor.execute(query, params)
+        else:
+            cursor.execute(query)
+            
+        # Para SELECT retornar resultados
+        if query.strip().upper().startswith('SELECT'):
+            result = cursor.fetchall()
+        else:
+            conn.commit()
+            result = None
+            
+        return result
+    except psycopg2.Error as e:
+        print(f"Error en la consulta: {e}")
+        conn.rollback()
+        return None
+    finally:
+        cursor.close()
+        conn.close()
+
+if __name__ == "__main__":
+    # Inicializar la base de datos al ejecutar el script
+    init_db()

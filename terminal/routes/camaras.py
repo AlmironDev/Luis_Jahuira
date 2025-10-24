@@ -2,11 +2,9 @@ import cv2
 import threading
 import time
 from flask import jsonify, render_template, request, redirect, url_for, flash, abort
-from database import get_db_connection
+from database import execute_query
 import validators
 import re
-
-
 
 def configure_camaras_routes(app):
     @app.route('/camaras')
@@ -16,19 +14,19 @@ def configure_camaras_routes(app):
             page = request.args.get('page', 1, type=int)
             per_page = 10
             
-            conn = get_db_connection()
+            # Obtener total de cámaras
+            total_result = execute_query('SELECT COUNT(*) as count FROM camaras', fetch=True)
+            total = total_result[0]['count'] if total_result else 0
             
-            total = conn.execute('SELECT COUNT(*) FROM camaras').fetchone()[0]
-            camaras = conn.execute('''
+            # Obtener cámaras paginadas
+            camaras = execute_query('''
                 SELECT id, nombre, url, ubicacion, activa,
-                       strftime('%d/%m/%Y %H:%M', fecha_instalacion) as fecha_instalacion,
+                       TO_CHAR(fecha_instalacion, 'DD/MM/YYYY HH24:MI') as fecha_instalacion,
                        descripcion
                 FROM camaras
                 ORDER BY fecha_instalacion DESC
-                LIMIT ? OFFSET ?
-            ''', (per_page, (page - 1) * per_page)).fetchall()
-            
-            conn.close()
+                LIMIT %s OFFSET %s
+            ''', (per_page, (page - 1) * per_page), fetch=True)
             
             print("Cámaras cargadas:", camaras)
             
@@ -47,15 +45,13 @@ def configure_camaras_routes(app):
         """Agrega una nueva cámara"""
         if request.method == 'POST':
             try:
-                    
                 print("Cámara request.form:", request.form)
                 nombre = request.form.get('nombre', '').strip()
                 url = request.form.get('url', '').strip()
                 ubicacion = request.form.get('ubicacion', '').strip()
                 descripcion = request.form.get('descripcion', '').strip()
-                activa = int('1' in request.form.getlist('activa'))
+                activa = 'activa' in request.form
 
-                
                 if not nombre or not url:
                     flash('Nombre y URL son campos obligatorios', 'error')
                     return render_template('camaras/add.html', form_data=request.form)
@@ -64,52 +60,47 @@ def configure_camaras_routes(app):
                     flash('La URL proporcionada no es válida', 'error')
                     return render_template('camaras/add.html', form_data=request.form)
 
-                conn = get_db_connection()
-                existing = conn.execute('SELECT 1 FROM camaras WHERE url = ?', (url,)).fetchone()
+                # Verificar si ya existe una cámara con esta URL
+                existing = execute_query('SELECT 1 FROM camaras WHERE url = %s', (url,), fetch=True)
                 if existing:
                     flash('Ya existe una cámara con esta URL', 'error')
-                    conn.close()
                     return render_template('camaras/add.html', form_data=request.form)
                 
-                conn.execute('''
+                # Insertar nueva cámara
+                execute_query('''
                     INSERT INTO camaras (
                         nombre, url, ubicacion, descripcion, activa
-                    ) VALUES (?, ?, ?, ?, ?)
+                    ) VALUES (%s, %s, %s, %s, %s)
                 ''', (nombre, url, ubicacion, descripcion, activa))
-                
-                conn.commit()
-                conn.close()
                 
                 flash('Cámara agregada correctamente', 'success')
                 return redirect(url_for('camaras_index'))
+                
             except Exception as e:
                 app.logger.error(f"Error al agregar cámara: {str(e)}")
                 flash('Error al agregar la cámara', 'error')
-                if 'conn' in locals():
-                    conn.rollback()
-                    conn.close()
                 return render_template('camaras/add.html', form_data=request.form)
+        
         return render_template('camaras/add.html')
 
     @app.route('/camaras/edit/<int:id>', methods=['GET', 'POST'])
     def camaras_edit(id):
         """Edita una cámara existente"""
         try:
-            conn = get_db_connection()
-            camara = conn.execute('SELECT * FROM camaras WHERE id = ?', (id,)).fetchone()
-            if not camara:
-                conn.close()
+            # Obtener cámara
+            camara_result = execute_query('SELECT * FROM camaras WHERE id = %s', (id,), fetch=True)
+            if not camara_result:
                 abort(404)
+            
+            camara = camara_result[0]
             print("Cámara a editar:", camara)
-            print("Cámara request.form:", request.form)
             
             if request.method == 'POST':
                 nombre = request.form.get('nombre', '').strip()
                 url = request.form.get('url', '').strip()
                 ubicacion = request.form.get('ubicacion', '').strip()
                 descripcion = request.form.get('descripcion', '').strip()
-                activa = int('1' in request.form.getlist('activa'))
-
+                activa = 'activa' in request.form
 
                 if not nombre or not url:
                     flash('Nombre y URL son campos obligatorios', 'error')
@@ -119,57 +110,53 @@ def configure_camaras_routes(app):
                     flash('La URL proporcionada no es válida', 'error')
                     return render_template('camaras/edit.html', camara=camara)
 
-                existing = conn.execute('SELECT 1 FROM camaras WHERE url = ? AND id != ?', (url, id)).fetchone()
+                # Verificar si existe otra cámara con la misma URL
+                existing = execute_query(
+                    'SELECT 1 FROM camaras WHERE url = %s AND id != %s', 
+                    (url, id), 
+                    fetch=True
+                )
                 if existing:
                     flash('Ya existe otra cámara con esta URL', 'error')
                     return render_template('camaras/edit.html', camara=camara)
                 
-                conn.execute('''
+                # Actualizar cámara
+                execute_query('''
                     UPDATE camaras
-                    SET nombre = ?, url = ?, ubicacion = ?, descripcion = ?, activa = ?
-                    WHERE id = ?
+                    SET nombre = %s, url = %s, ubicacion = %s, descripcion = %s, activa = %s
+                    WHERE id = %s
                 ''', (nombre, url, ubicacion, descripcion, activa, id))
                 
-                conn.commit()
-                conn.close()
                 flash('Cámara actualizada correctamente', 'success')
                 return redirect(url_for('camaras_index'))
 
-            conn.close()
             return render_template('camaras/edit.html', camara=camara)
 
         except Exception as e:
             app.logger.error(f"Error al editar cámara {id}: {str(e)}")
             flash('Error al editar la cámara', 'error')
-            if 'conn' in locals():
-                conn.rollback()
-                conn.close()
             return redirect(url_for('camaras_index'))
         
     @app.route('/camaras/toggle/<int:id>', methods=['POST'])
     def camaras_toggle(id):
         """Activa o desactiva una cámara"""
         try:
-            conn = get_db_connection()
-            camara = conn.execute('SELECT activa FROM camaras WHERE id = ?', (id,)).fetchone()
-            if not camara:
-                conn.close()
+            # Obtener estado actual de la cámara
+            camara_result = execute_query('SELECT activa FROM camaras WHERE id = %s', (id,), fetch=True)
+            if not camara_result:
                 return jsonify({"error": "Cámara no encontrada"}), 404
 
-            activa = int('1' in request.form.getlist('activa'))
+            # Cambiar estado (toggle)
+            nueva_activa = not camara_result[0]['activa']
+            
+            execute_query('UPDATE camaras SET activa = %s WHERE id = %s', (nueva_activa, id))
 
-
-            conn.execute('UPDATE camaras SET activa = ? WHERE id = ?', (activa, id))
-            conn.commit()
-            conn.close()
-
-            estado_texto = "activada" if activa else "desactivada"
+            estado_texto = "activada" if nueva_activa else "desactivada"
             return jsonify({"success": True, "message": f"Cámara {estado_texto}"})
+            
         except Exception as e:
             app.logger.error(f"Error al cambiar estado de cámara {id}: {str(e)}")
             return jsonify({"error": "Error interno"}), 500       
-        
-        
         
     @app.route('/camaras/delete/<int:id>', methods=['POST'])
     def camaras_delete(id):
@@ -178,45 +165,35 @@ def configure_camaras_routes(app):
             abort(405)  # Method Not Allowed
             
         try:
-            conn = get_db_connection()
-            
-            # Verify camera exists
-            camara = conn.execute(
-                'SELECT 1 FROM camaras WHERE id = ?',
-                (id,)
-            ).fetchone()
-            
-            if not camara:
-                conn.close()
+            # Verificar si la cámara existe
+            camara_result = execute_query('SELECT 1 FROM camaras WHERE id = %s', (id,), fetch=True)
+            if not camara_result:
                 flash('La cámara no existe', 'error')
                 return redirect(url_for('camaras_index'))
             
-            # Check for associated notifications
-            notificaciones = conn.execute(
-                'SELECT COUNT(*) FROM notificaciones WHERE id_camara = ?',
-                (id,)
-            ).fetchone()[0]
+            # Verificar notificaciones asociadas
+            notificaciones_result = execute_query(
+                'SELECT COUNT(*) as count FROM notificaciones WHERE id_camara = %s',
+                (id,),
+                fetch=True
+            )
+            notificaciones = notificaciones_result[0]['count'] if notificaciones_result else 0
             
             if notificaciones > 0:
                 flash(f'No se puede eliminar: existen {notificaciones} notificaciones asociadas', 'error')
             else:
-                conn.execute('DELETE FROM camaras WHERE id = ?', (id,))
-                conn.commit()
+                execute_query('DELETE FROM camaras WHERE id = %s', (id,))
                 flash('Cámara eliminada correctamente', 'success')
             
-            conn.close()
             return redirect(url_for('camaras_index'))
             
         except Exception as e:
             app.logger.error(f"Error al eliminar cámara {id}: {str(e)}")
             flash('Error al eliminar la cámara', 'error')
-            if 'conn' in locals():
-                conn.rollback()
-                conn.close()
             return redirect(url_for('camaras_index'))
 
-
     def try_connect(ip, usuario, clave, results):
+        """Función auxiliar para probar conexión a cámaras"""
         url = f"rtsp://{usuario}:{clave}@{ip}:554/cam/realmonitor?channel=1&subtype=0"
         print("Probando conexión a:", url)
         cap = cv2.VideoCapture(url)
@@ -269,7 +246,6 @@ def configure_camaras_routes(app):
 
         return app.response_class(generate(), mimetype='text/event-stream')
 
-
     @app.route('/camaras/scan/stop', methods=['POST'])
     def camaras_scan_stop():
         """Detiene la búsqueda de cámaras."""
@@ -290,18 +266,13 @@ def configure_camaras_routes(app):
             return jsonify({"error": "Faltan datos"}), 400
 
         # Evita duplicados
-        conn = get_db_connection()
-        existing = conn.execute('SELECT 1 FROM camaras WHERE url = ?', (url,)).fetchone()
+        existing = execute_query('SELECT 1 FROM camaras WHERE url = %s', (url,), fetch=True)
         if existing:
-            conn.close()
             return jsonify({"error": "La cámara ya está registrada"}), 409
 
-        conn.execute('''
+        execute_query('''
             INSERT INTO camaras (nombre, url, ubicacion, descripcion)
-            VALUES (?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s)
         ''', (nombre, url, ubicacion, 'Detectada automáticamente'))
-        conn.commit()
-        conn.close()
 
         return jsonify({"success": True, "message": "Cámara guardada correctamente"})
-        

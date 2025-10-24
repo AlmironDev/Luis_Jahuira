@@ -1,5 +1,5 @@
 from flask import render_template, request, redirect, url_for, flash, abort
-from database import get_db_connection
+from database import execute_query
 from datetime import datetime
 
 def configure_notificacion_routes(app):
@@ -10,23 +10,22 @@ def configure_notificacion_routes(app):
         try:
             page = request.args.get('page', 1, type=int)
             per_page = 10
-            conn = get_db_connection()
             
             # Obtener notificaciones con información de usuario y cámara
-            notificaciones = conn.execute('''
+            notificaciones = execute_query('''
                 SELECT n.id, n.mensaje, n.tipo, n.leida, 
-                       strftime('%d/%m/%Y %H:%M', n.fecha) as fecha_formateada,
+                       TO_CHAR(n.fecha, 'DD/MM/YYYY HH24:MI') as fecha_formateada,
                        u.nombre as usuario_nombre,
                        c.nombre as camara_nombre
                 FROM notificaciones n
                 LEFT JOIN usuarios u ON n.id_usuario = u.id
                 LEFT JOIN camaras c ON n.id_camara = c.id
                 ORDER BY n.fecha DESC
-                LIMIT ? OFFSET ?
-            ''', (per_page, (page - 1) * per_page)).fetchall()
+                LIMIT %s OFFSET %s
+            ''', (per_page, (page - 1) * per_page), fetch=True)
             
-            total = conn.execute('SELECT COUNT(*) FROM notificaciones').fetchone()[0]
-            conn.close()
+            total_result = execute_query('SELECT COUNT(*) as count FROM notificaciones', fetch=True)
+            total = total_result[0]['count'] if total_result else 0
             
             return render_template('notificacion/index.html', 
                                 notificaciones=notificaciones,
@@ -46,10 +45,7 @@ def configure_notificacion_routes(app):
             abort(405)
             
         try:
-            conn = get_db_connection()
-            conn.execute('UPDATE notificaciones SET leida = 1 WHERE id = ?', (id,))
-            conn.commit()
-            conn.close()
+            execute_query('UPDATE notificaciones SET leida = true WHERE id = %s', (id,))
             return '', 204  # Respuesta vacía para AJAX
         except Exception as e:
             app.logger.error(f"Error al marcar notificación {id} como leída: {str(e)}")
@@ -58,9 +54,11 @@ def configure_notificacion_routes(app):
     @app.route('/notificaciones/add', methods=['GET', 'POST'])
     def notificacion_add():
         """Agrega una nueva notificación"""
-        conn = get_db_connection()
-        
         try:
+            # Obtener datos para los selects
+            usuarios = execute_query('SELECT id, nombre FROM usuarios', fetch=True)
+            camaras = execute_query('SELECT id, nombre FROM camaras', fetch=True)
+            
             if request.method == 'POST':
                 mensaje = request.form.get('mensaje', '').strip()
                 tipo = request.form.get('tipo', 'info')
@@ -70,20 +68,19 @@ def configure_notificacion_routes(app):
                 if not mensaje:
                     flash('El mensaje es obligatorio', 'error')
                 else:
-                    conn.execute('''
+                    # Convertir id_usuario e id_camara a None si están vacíos
+                    id_usuario = id_usuario if id_usuario else None
+                    id_camara = id_camara if id_camara else None
+                    
+                    execute_query('''
                         INSERT INTO notificaciones 
                         (mensaje, tipo, id_usuario, id_camara, fecha) 
-                        VALUES (?, ?, ?, ?, ?)
+                        VALUES (%s, %s, %s, %s, %s)
                     ''', (mensaje, tipo, id_usuario, id_camara, datetime.now()))
                     
-                    conn.commit()
                     flash('Notificación creada correctamente', 'success')
                     return redirect(url_for('notificacion_index'))
 
-            # Obtener datos para los selects
-            usuarios = conn.execute('SELECT id, nombre FROM usuarios').fetchall()
-            camaras = conn.execute('SELECT id, nombre FROM camaras').fetchall()
-            
             return render_template('notificacion/add.html',
                                 usuarios=usuarios,
                                 camaras=camaras)
@@ -94,25 +91,27 @@ def configure_notificacion_routes(app):
             return render_template('notificacion/add.html',
                                 usuarios=usuarios,
                                 camaras=camaras)
-        finally:
-            conn.close()
 
     @app.route('/notificaciones/edit/<int:id>', methods=['GET', 'POST'])
     def notificacion_edit(id):
         """Edita una notificación existente"""
-        conn = get_db_connection()
-        
         try:
-            notificacion = conn.execute('''
+            notificacion_result = execute_query('''
                 SELECT n.*, u.nombre as usuario_nombre, c.nombre as camara_nombre
                 FROM notificaciones n
                 LEFT JOIN usuarios u ON n.id_usuario = u.id
                 LEFT JOIN camaras c ON n.id_camara = c.id
-                WHERE n.id = ?
-            ''', (id,)).fetchone()
+                WHERE n.id = %s
+            ''', (id,), fetch=True)
 
-            if notificacion is None:
+            if not notificacion_result:
                 abort(404)
+
+            notificacion = notificacion_result[0]
+
+            # Obtener datos para los selects
+            usuarios = execute_query('SELECT id, nombre FROM usuarios', fetch=True)
+            camaras = execute_query('SELECT id, nombre FROM camaras', fetch=True)
 
             if request.method == 'POST':
                 mensaje = request.form.get('mensaje', '').strip()
@@ -123,20 +122,19 @@ def configure_notificacion_routes(app):
                 if not mensaje:
                     flash('El mensaje es obligatorio', 'error')
                 else:
-                    conn.execute('''
+                    # Convertir id_usuario e id_camara a None si están vacíos
+                    id_usuario = id_usuario if id_usuario else None
+                    id_camara = id_camara if id_camara else None
+                    
+                    execute_query('''
                         UPDATE notificaciones SET
-                            mensaje = ?, tipo = ?, id_usuario = ?, id_camara = ?
-                        WHERE id = ?
+                            mensaje = %s, tipo = %s, id_usuario = %s, id_camara = %s
+                        WHERE id = %s
                     ''', (mensaje, tipo, id_usuario, id_camara, id))
                     
-                    conn.commit()
                     flash('Notificación actualizada correctamente', 'success')
                     return redirect(url_for('notificacion_index'))
 
-            # Obtener datos para los selects
-            usuarios = conn.execute('SELECT id, nombre FROM usuarios').fetchall()
-            camaras = conn.execute('SELECT id, nombre FROM camaras').fetchall()
-            
             return render_template('notificacion/edit.html',
                                 notificacion=notificacion,
                                 usuarios=usuarios,
@@ -146,8 +144,6 @@ def configure_notificacion_routes(app):
             app.logger.error(f"Error al editar notificación {id}: {str(e)}")
             flash('Error al actualizar la notificación', 'error')
             return redirect(url_for('notificacion_index'))
-        finally:
-            conn.close()
 
     @app.route('/notificaciones/delete/<int:id>', methods=['POST'])
     def notificacion_delete(id):
@@ -156,14 +152,10 @@ def configure_notificacion_routes(app):
             abort(405)
             
         try:
-            conn = get_db_connection()
-            conn.execute('DELETE FROM notificaciones WHERE id = ?', (id,))
-            conn.commit()
+            execute_query('DELETE FROM notificaciones WHERE id = %s', (id,))
             flash('Notificación eliminada correctamente', 'success')
         except Exception as e:
             app.logger.error(f"Error al eliminar notificación {id}: {str(e)}")
             flash('Error al eliminar la notificación', 'error')
-        finally:
-            conn.close()
             
         return redirect(url_for('notificacion_index'))
